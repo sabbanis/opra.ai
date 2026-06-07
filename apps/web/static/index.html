@@ -12,7 +12,7 @@
         <div class="brand-mark" aria-hidden="true">OP</div>
         <div>
           <h1>opra.ai</h1>
-          <p>Governed workspace</p>
+          <p>Local operating layer</p>
         </div>
       </div>
       <div class="header-actions">
@@ -29,7 +29,10 @@
     </header>
 
     <nav class="tabbar" aria-label="Workspace views">
-      <button class="active" type="button" data-view="dashboard">Dashboard</button>
+      <button class="active" type="button" data-view="modules">Modules</button>
+      <button type="button" data-view="crm">CRM</button>
+      <button type="button" data-view="issues">Issues</button>
+      <button type="button" data-view="hr">HR</button>
       <button type="button" data-view="records">Records</button>
       <button type="button" data-view="proposals">Proposals</button>
       <button type="button" data-view="github">GitHub</button>
@@ -37,7 +40,86 @@
     </nav>
 
     <main class="workspace">
-      <section class="view active" id="dashboardView">
+      <section class="view active" id="modulesView">
+        <section class="flow-rail" aria-label="Governed workflow">
+          <button class="flow-step active" type="button" data-flow-view="modules">
+            <span>01</span>
+            <strong>Module</strong>
+          </button>
+          <button class="flow-step" type="button" data-flow-view="records">
+            <span>02</span>
+            <strong>Record</strong>
+          </button>
+          <button class="flow-step" type="button" data-flow-view="records">
+            <span>03</span>
+            <strong>Validate</strong>
+          </button>
+          <button class="flow-step" type="button" data-flow-view="proposals">
+            <span>04</span>
+            <strong>Propose</strong>
+          </button>
+          <button class="flow-step" type="button" data-flow-view="proposals">
+            <span>05</span>
+            <strong>Approve</strong>
+          </button>
+          <button class="flow-step" type="button" data-flow-view="audit">
+            <span>06</span>
+            <strong>Audit</strong>
+          </button>
+        </section>
+
+        <section class="module-command">
+          <div class="module-lede">
+            <div>
+              <h2>Workspace Command</h2>
+              <p id="moduleCommandSummary">Loading modules</p>
+            </div>
+            <div class="module-signal" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+
+          <div class="module-tiles" id="moduleTiles"></div>
+        </section>
+
+        <section class="module-home-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Current Module</h2>
+                <p id="activeModuleSummary">CRM selected</p>
+              </div>
+            </div>
+            <div class="module-focus" id="moduleFocus"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Starter Records</h2>
+                <p id="starterSummary">Ready templates</p>
+              </div>
+            </div>
+            <div class="template-grid" id="starterTemplates"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Live Flow</h2>
+                <p id="liveFlowSummary">Repo state</p>
+              </div>
+            </div>
+            <div class="flow-state" id="flowState"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="crmView">
         <section class="metrics" aria-label="CRM metrics">
           <article class="metric">
             <span>Accounts</span>
@@ -123,6 +205,72 @@
                 <tbody id="opportunitiesTable"></tbody>
               </table>
             </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="issuesView">
+        <section class="module-dashboard issues-dashboard">
+          <div class="module-banner">
+            <div>
+              <h2>Issues</h2>
+              <p id="issuesBannerSummary">Delivery workflow</p>
+            </div>
+            <button class="primary" type="button" data-open-records="issues">Open Records</button>
+          </div>
+          <div class="module-metrics" id="issuesMetrics"></div>
+          <section class="module-detail-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Issue Records</h2>
+                  <p id="issuesRecordSummary">0 records</p>
+                </div>
+              </div>
+              <div class="module-record-list" id="issuesRecordList"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Starter Records</h2>
+                  <p>Components, defects, incidents, releases</p>
+                </div>
+              </div>
+              <div class="template-grid" id="issuesTemplates"></div>
+            </section>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="hrView">
+        <section class="module-dashboard hr-dashboard">
+          <div class="module-banner">
+            <div>
+              <h2>HR</h2>
+              <p id="hrBannerSummary">People workflow</p>
+            </div>
+            <button class="primary" type="button" data-open-records="hr">Open Records</button>
+          </div>
+          <div class="module-metrics" id="hrMetrics"></div>
+          <section class="module-detail-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>HR Records</h2>
+                  <p id="hrRecordSummary">0 records</p>
+                </div>
+              </div>
+              <div class="module-record-list" id="hrRecordList"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Starter Records</h2>
+                  <p>Jobs, candidates, employees, onboarding</p>
+                </div>
+              </div>
+              <div class="template-grid" id="hrTemplates"></div>
+            </section>
           </section>
         </section>
       </section>

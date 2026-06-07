@@ -162,6 +162,32 @@ class LocalReadAPITests(unittest.TestCase):
             self.assertTrue(validate_response.body["valid"])
             self.assertEqual(validate_response.body["object_type"], "account")
 
+    def test_modules_endpoint_groups_records_by_module(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_seed(root)
+            write_yaml(
+                root / "modules/issues/objects/defects/defect_demo.yaml",
+                self._base_record("defect_demo", "defect"),
+            )
+            write_yaml(
+                root / "modules/hr/objects/employees/emp_demo.yaml",
+                self._base_record("emp_demo", "employee", visibility="hr_private"),
+            )
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+
+            response = api.handle_get(
+                path="/modules",
+                query={},
+                user=User(id="ssabbani", username="ssabbani", roles=("founder",)),
+            )
+
+            self.assertEqual(response.status_code, 200)
+            modules = {module["id"]: module for module in response.body["modules"]}
+            self.assertEqual(modules["crm"]["record_count"], 2)
+            self.assertEqual(modules["issues"]["type_counts"]["defect"], 1)
+            self.assertEqual(modules["hr"]["type_counts"]["employee"], 1)
+
     def test_proposal_lifecycle_can_be_driven_through_api(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -394,6 +420,28 @@ class LocalReadAPITests(unittest.TestCase):
             next_step="Send renewal proposal and technical validation plan",
             approval_status=ApprovalStatus.PENDING_FINANCE,
         )
+
+    def _base_record(
+        self,
+        object_id: str,
+        object_type: str,
+        visibility: str = "company",
+    ):
+        return {
+            "id": object_id,
+            "object_type": object_type,
+            "owner": "ssabbani",
+            "created_by": "ssabbani",
+            "updated_by": "ssabbani",
+            "created_at": "2026-06-06T10:00:00Z",
+            "updated_at": "2026-06-06T10:00:00Z",
+            "version": 1,
+            "status": "active",
+            "visibility": visibility,
+            "links": [],
+            "tags": [],
+            "metadata": {},
+        }
 
 
 if __name__ == "__main__":

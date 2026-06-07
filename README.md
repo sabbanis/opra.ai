@@ -53,7 +53,7 @@ python3 -m company_os_cli index-crm
 python3 -m company_os_cli crm-skill --name pipeline-summary --user ssabbani --role sales_rep
 ```
 
-Run the local browser dashboard:
+Run the local browser workspace:
 
 ```bash
 python3 apps/api/server.py --repo-root . --port 8080

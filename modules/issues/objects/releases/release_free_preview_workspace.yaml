@@ -1,0 +1,21 @@
+id: release_free_preview_workspace
+object_type: release
+owner: ssabbani
+created_by: ssabbani
+updated_by: ssabbani
+created_at: 2026-06-06T10:20:00Z
+updated_at: 2026-06-06T10:20:00Z
+version: 1
+status: active
+visibility: company
+links:
+  - target_type: feature_request
+    target_id: feat_guided_module_flow
+    relationship: includes
+tags:
+  - preview
+metadata:
+  name: "Free preview workspace"
+  state: candidate
+  target_date: 2026-06-14
+  readiness: "module UI, proposal flow, audit visibility"

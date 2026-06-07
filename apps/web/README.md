@@ -1,12 +1,14 @@
 # Web App
 
-Localhost web UI. The UI must use the same governance services as CLI, Skills, API, and GitHub workflows.
+Localhost web UI. The UI uses the same governance services as CLI, Skills, API, and GitHub workflows.
 
-The first browser surface is served by the local API server at `http://127.0.0.1:8080/`.
+The browser workspace is served by the local API server at `http://127.0.0.1:8080/`.
 
 Current surface:
 
-- CRM summary metrics
-- Account table
-- Opportunity table
-- Read-only CRM Skill results
+- Module command view for CRM, Issues, and HR
+- CRM dashboard with accounts, opportunities, and local Skill results
+- Issues workspace for defects, incidents, feature requests, components, releases, and RCAs
+- HR workspace for jobs, candidates, employees, onboarding, policy acknowledgments, and time off
+- Universal record editor for validation, policy checks, governed writes, and proposals
+- Proposal review/apply workflow, GitHub previews, and audit evidence

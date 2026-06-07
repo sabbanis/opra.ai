@@ -1,0 +1,23 @@
+id: incident_local_api_smoke
+object_type: incident
+owner: ssabbani
+created_by: ssabbani
+updated_by: ssabbani
+created_at: 2026-06-06T10:15:00Z
+updated_at: 2026-06-06T10:15:00Z
+version: 1
+status: active
+visibility: company
+links:
+  - target_type: component
+    target_id: comp_workspace_ui
+    relationship: involves
+tags:
+  - smoke
+  - api
+metadata:
+  title: "Local API smoke check"
+  severity: low
+  state: monitoring
+  started_at: 2026-06-06T10:15:00Z
+  next_step: "Verify health and validation routes"

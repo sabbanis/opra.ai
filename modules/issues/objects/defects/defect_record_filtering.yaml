@@ -1,0 +1,23 @@
+id: defect_record_filtering
+object_type: defect
+owner: ssabbani
+created_by: ssabbani
+updated_by: ssabbani
+created_at: 2026-06-06T10:05:00Z
+updated_at: 2026-06-06T10:05:00Z
+version: 1
+status: active
+visibility: company
+links:
+  - target_type: component
+    target_id: comp_workspace_ui
+    relationship: affects
+tags:
+  - triage
+  - ui
+metadata:
+  title: "Record filter keeps stale selection"
+  severity: medium
+  state: triage
+  owner_team: platform
+  next_step: "Reset selection when module filter changes"

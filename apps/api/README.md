@@ -4,7 +4,7 @@ Local API application. The API should expose platform core behavior without owni
 
 ## Local Server
 
-The first API surface is dependency-free and read-only. It exposes CRM dashboard and Skill-style read endpoints through the same core read model and policy checks used by the CLI.
+The API surface is dependency-free and local-first. It exposes CRM dashboard reads, module summaries, source-record validation, governed writes, proposal workflow actions, GitHub preview actions, and audit evidence through the same core services used by the CLI.
 
 Run it locally:
 
@@ -20,4 +20,4 @@ curl -H "X-Company-OS-User: ssabbani" -H "X-Company-OS-Roles: sales_rep" http://
 curl -H "X-Company-OS-User: ssabbani" -H "X-Company-OS-Roles: sales_rep" http://127.0.0.1:8080/crm/skills/pipeline-summary
 ```
 
-Opening `http://127.0.0.1:8080/` in a browser serves the local CRM dashboard.
+Opening `http://127.0.0.1:8080/` in a browser serves the local workspace for CRM, Issues, HR, records, proposals, GitHub previews, and audit.

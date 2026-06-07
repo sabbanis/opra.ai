@@ -56,6 +56,28 @@ from company_os_core.schema import base_object_schema, validate_object
 from company_os_core.serialization import read_yaml, stable_hash, to_plain_data, write_yaml
 
 
+MODULES: tuple[Mapping[str, Any], ...] = (
+    {
+        "id": "crm",
+        "name": "CRM",
+        "label": "Revenue workflow",
+        "object_types": ("account", "contact", "opportunity", "activity", "approval", "commitment", "task"),
+    },
+    {
+        "id": "issues",
+        "name": "Issues",
+        "label": "Delivery workflow",
+        "object_types": ("component", "defect", "feature_request", "incident", "rca", "release"),
+    },
+    {
+        "id": "hr",
+        "name": "HR",
+        "label": "People workflow",
+        "object_types": ("candidate", "employee", "interview", "job", "offer", "onboarding", "policy_ack", "time_off"),
+    },
+)
+
+
 @dataclass(frozen=True)
 class APIResponse:
     """Response returned by the local API router."""
@@ -117,6 +139,8 @@ class LocalReadAPI:
             return self._api_index()
         if path == "/health":
             return APIResponse(status_code=200, body={"status": "ok"})
+        if path == "/modules":
+            return self._modules()
         if path == "/objects":
             return self._objects(query)
         if path == "/object":
@@ -182,6 +206,7 @@ class LocalReadAPI:
                 "status": "ok",
                 "endpoints": [
                     "/health",
+                    "/modules",
                     "/objects",
                     "/object",
                     "/objects/validate",
@@ -274,9 +299,12 @@ class LocalReadAPI:
 
     def _objects(self, query: Mapping[str, str]) -> APIResponse:
         requested_type = query.get("object_type", "")
+        requested_module = query.get("module", "")
         rows = []
         for object_type, directory in _demo_path_map().items():
             if requested_type and object_type != requested_type:
+                continue
+            if requested_module and _module_id_for_object_type(object_type) != requested_module:
                 continue
             root = self._repo_root / directory
             if not root.exists():
@@ -285,6 +313,45 @@ class LocalReadAPI:
                 data = _read_mapping(path)
                 rows.append(self._object_row(path=path, data=data))
         return APIResponse(status_code=200, body={"objects": rows})
+
+    def _modules(self) -> APIResponse:
+        rows = []
+        objects = []
+        for object_type, directory in _demo_path_map().items():
+            root = self._repo_root / directory
+            if not root.exists():
+                continue
+            for path in sorted(root.glob("*.yaml")):
+                data = _read_mapping(path)
+                objects.append(self._object_row(path=path, data=data))
+
+        for module in MODULES:
+            module_types = tuple(str(object_type) for object_type in module["object_types"])
+            module_objects = [
+                item
+                for item in objects
+                if item["object_type"] in module_types
+            ]
+            type_counts = {
+                object_type: sum(
+                    1
+                    for item in module_objects
+                    if item["object_type"] == object_type
+                )
+                for object_type in module_types
+            }
+            rows.append(
+                {
+                    "id": module["id"],
+                    "name": module["name"],
+                    "label": module["label"],
+                    "object_types": list(module_types),
+                    "record_count": len(module_objects),
+                    "type_counts": type_counts,
+                    "records": module_objects,
+                }
+            )
+        return APIResponse(status_code=200, body={"modules": rows})
 
     def _object(self, query: Mapping[str, str]) -> APIResponse:
         path = self._safe_repo_path(query.get("path", ""))
@@ -643,6 +710,7 @@ class LocalReadAPI:
             "hash": stable_hash(data),
             "id": str(data.get("id", "")),
             "object_type": str(data.get("object_type", "")),
+            "module": _module_id_for_object_type(str(data.get("object_type", ""))),
             "name": str(data.get("name", data.get("id", ""))),
             "owner": str(data.get("owner", "")),
             "status": str(data.get("status", "")),
@@ -843,11 +911,34 @@ def _parse_utc_timestamp(value: str) -> datetime:
 def _demo_path_map() -> Mapping[str, str]:
     return {
         "account": "modules/crm/objects/accounts",
+        "activity": "modules/crm/objects/activities",
+        "approval": "modules/crm/objects/approvals",
+        "commitment": "modules/crm/objects/commitments",
         "contact": "modules/crm/objects/contacts",
         "opportunity": "modules/crm/objects/opportunities",
+        "task": "modules/crm/objects/tasks",
+        "component": "modules/issues/objects/components",
         "defect": "modules/issues/objects/defects",
+        "feature_request": "modules/issues/objects/feature_requests",
+        "incident": "modules/issues/objects/incidents",
+        "rca": "modules/issues/objects/rca",
+        "release": "modules/issues/objects/releases",
+        "candidate": "modules/hr/objects/candidates",
         "employee": "modules/hr/objects/employees",
+        "interview": "modules/hr/objects/interviews",
+        "job": "modules/hr/objects/jobs",
+        "offer": "modules/hr/objects/offers",
+        "onboarding": "modules/hr/objects/onboarding",
+        "policy_ack": "modules/hr/objects/policy_ack",
+        "time_off": "modules/hr/objects/time_off",
     }
+
+
+def _module_id_for_object_type(object_type: str) -> str:
+    for module in MODULES:
+        if object_type in module["object_types"]:
+            return str(module["id"])
+    return ""
 
 
 def _validation_issues(issues) -> list[Mapping[str, str]]:
