@@ -75,6 +75,7 @@ Start here:
 - [First CRM Demo](docs/first-crm-demo.md)
 - [Governed Proposal Workflow](docs/governed-proposal-workflow.md)
 - [GitHub Integration](docs/github-integration.md)
+- [Repository Boundary](docs/repository-boundary.md)
 - [Testing Guide](docs/testing-guide.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
@@ -106,4 +107,7 @@ PYTHONPATH=packages/company_os_core/src:packages/company_os_cli/src python3 -m c
 
 ## License
 
-License information has not been finalized in this split. Do not assume redistribution terms beyond normal GitHub access until a license file is added.
+The source code in this repository is licensed under the Apache License 2.0.
+See [LICENSE](LICENSE).
+
+A future hosted service or commercial support offering may use separate terms and a distinct edition name. The Apache-2.0 license for this source repository remains unchanged.

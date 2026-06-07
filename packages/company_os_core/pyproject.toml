@@ -8,6 +8,10 @@ version = "0.1.0"
 description = "Core platform primitives for opra.ai."
 readme = "README.md"
 requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+]
 dependencies = []
 
 [tool.setuptools.packages.find]

@@ -34,6 +34,20 @@ Governed mutation service:
 python3 -m unittest tests.unit.test_governed_mutation tests.e2e.test_governed_local_write
 ```
 
+Public repository hygiene:
+
+```bash
+python3 -m unittest tests.unit.test_public_repo_hygiene
+python3 tools/public_repo_hygiene.py
+```
+
+Expected:
+
+- No absolute local paths.
+- No private sibling repository links or paths.
+- No private planning document references.
+- No common secret formats or token assignments.
+
 ## CLI Smoke Tests
 
 ```bash
