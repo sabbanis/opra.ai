@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "company-os-cli"
+version = "0.1.0"
+description = "Command-line interface for opra.ai."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "company-os-core==0.1.0",
+]
+
+[project.scripts]
+company-os = "company_os_cli.main:main"
+opra = "company_os_cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

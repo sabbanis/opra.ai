@@ -1,0 +1,119 @@
+name: proposal-check
+
+on:
+  pull_request:
+    paths:
+      - "platform/proposals/mutations/*.yaml"
+      - "modules/**/*.yaml"
+      - "packages/**"
+      - ".github/workflows/proposal-check.yml"
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+      - dismissed
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  proposal-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Load pull request review evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p .opra
+          gh pr view "${{ github.event.pull_request.number }}" \
+            --json number,url,reviews \
+            > .opra/github-pr-reviews.json
+
+      - name: Validate proposal PR artifacts
+        id: proposal_check
+        env:
+          PYTHONPATH: packages/company_os_core/src:packages/company_os_cli/src
+        shell: bash
+        run: |
+          shopt -s nullglob
+          proposal_files=(platform/proposals/mutations/proposal_*.yaml)
+
+          if [ ${#proposal_files[@]} -eq 0 ]; then
+            echo "No mutation proposal artifacts found."
+            echo "has_proposals=false" >> "$GITHUB_OUTPUT"
+            echo "status=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has_proposals=true" >> "$GITHUB_OUTPUT"
+          report_file=.opra/proposal-check-report.md
+          : > "$report_file"
+          status=0
+          for proposal_file in "${proposal_files[@]}"; do
+            one_report=".opra/$(basename "$proposal_file" .yaml)-report.md"
+            if ! python -m company_os_cli validate-proposal-pr \
+              --file "$proposal_file" \
+              --github-review-file .opra/github-pr-reviews.json \
+              --report-file "$one_report"; then
+              status=1
+            fi
+            cat "$one_report" >> "$report_file"
+            printf '\n\n---\n\n' >> "$report_file"
+          done
+
+          cat "$report_file" >> "$GITHUB_STEP_SUMMARY"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upsert proposal check comment
+        if: always() && steps.proposal_check.outputs.has_proposals == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          body = Path(".opra/proposal-check-report.md").read_text(encoding="utf-8")
+          Path(".opra/proposal-check-comment.json").write_text(
+              json.dumps({"body": body}),
+              encoding="utf-8",
+          )
+          PY
+
+          comment_id="$(
+            gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+              --jq '.[] | select(.user.type == "Bot" and (.body | contains("<!-- opra-ai-proposal-check -->"))) | .id' \
+              | head -n 1
+          )"
+          if [ -n "$comment_id" ]; then
+            gh api \
+              --method PATCH \
+              "repos/${{ github.repository }}/issues/comments/$comment_id" \
+              --input .opra/proposal-check-comment.json
+          else
+            gh api \
+              --method POST \
+              "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+              --input .opra/proposal-check-comment.json
+          fi
+
+      - name: Fail on proposal validation errors
+        if: steps.proposal_check.outputs.status != '0'
+        shell: bash
+        run: exit 1

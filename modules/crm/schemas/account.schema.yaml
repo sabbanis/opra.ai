@@ -1,0 +1,84 @@
+object_type: account
+version: 1
+fields:
+  - name: id
+    type: string
+    required: true
+  - name: object_type
+    type: string
+    required: true
+  - name: owner
+    type: string
+    required: true
+  - name: created_by
+    type: string
+    required: true
+  - name: updated_by
+    type: string
+    required: true
+  - name: created_at
+    type: timestamp
+    required: true
+  - name: updated_at
+    type: timestamp
+    required: true
+  - name: version
+    type: integer
+    required: true
+    min_value: 1
+  - name: status
+    type: string
+    required: true
+    allowed_values:
+      - active
+      - archived
+      - deleted
+  - name: visibility
+    type: string
+    required: true
+    allowed_values:
+      - private
+      - team
+      - company
+  - name: links
+    type: array
+    required: true
+    item_type: object
+  - name: tags
+    type: array
+    required: true
+    item_type: string
+  - name: metadata
+    type: object
+    required: true
+  - name: name
+    type: string
+    required: true
+  - name: stage
+    type: string
+    required: true
+    allowed_values:
+      - lead
+      - qualified
+      - active_customer
+      - renewal_due
+      - renewal_proposal
+      - renewed
+      - churned
+  - name: industry
+    type: string
+    required: true
+  - name: arr
+    type: integer
+    required: true
+    min_value: 0
+  - name: health
+    type: string
+    required: true
+    allowed_values:
+      - green
+      - yellow
+      - red
+  - name: renewal_date
+    type: date
+    required: true

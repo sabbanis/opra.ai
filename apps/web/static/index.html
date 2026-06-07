@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>opra.ai CRM</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">OP</div>
+        <div>
+          <h1>opra.ai</h1>
+          <p>CRM control plane</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="identity">ssabbani · sales_rep</span>
+        <button id="refreshButton" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="metrics" aria-label="CRM metrics">
+        <article class="metric">
+          <span>Accounts</span>
+          <strong id="accountCount">0</strong>
+        </article>
+        <article class="metric">
+          <span>Total ARR</span>
+          <strong id="totalArr">$0</strong>
+        </article>
+        <article class="metric">
+          <span>Open pipeline</span>
+          <strong id="openPipeline">$0</strong>
+        </article>
+        <article class="metric">
+          <span>Weighted pipeline</span>
+          <strong id="weightedPipeline">$0</strong>
+        </article>
+        <article class="metric attention">
+          <span>At risk</span>
+          <strong id="atRisk">0</strong>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <section class="panel wide">
+          <div class="panel-heading">
+            <div>
+              <h2>Accounts</h2>
+              <p id="generatedAt">Updated locally</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Stage</th>
+                  <th>Health</th>
+                  <th>ARR</th>
+                  <th>Renewal</th>
+                  <th>Pipeline</th>
+                </tr>
+              </thead>
+              <tbody id="accountsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Skill Result</h2>
+              <p id="skillSummary">Pending</p>
+            </div>
+          </div>
+          <div class="segmented" role="group" aria-label="CRM skills">
+            <button class="active" type="button" data-skill="pipeline-summary">Pipeline</button>
+            <button type="button" data-skill="renewal-health">Renewal</button>
+            <button type="button" data-skill="opportunity-view">Open opps</button>
+          </div>
+          <pre id="skillOutput">{}</pre>
+        </section>
+
+        <section class="panel wide">
+          <div class="panel-heading">
+            <div>
+              <h2>Opportunities</h2>
+              <p id="opportunityCount">0 open records</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Opportunity</th>
+                  <th>Account</th>
+                  <th>Stage</th>
+                  <th>Amount</th>
+                  <th>Weighted</th>
+                  <th>Close</th>
+                </tr>
+              </thead>
+              <tbody id="opportunitiesTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <p class="status" id="statusLine">Loading CRM data</p>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

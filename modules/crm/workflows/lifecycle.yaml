@@ -1,0 +1,49 @@
+account:
+  lead:
+    - qualified
+    - churned
+  qualified:
+    - active_customer
+    - churned
+  active_customer:
+    - renewal_due
+    - churned
+  renewal_due:
+    - renewal_proposal
+    - renewed
+    - churned
+  renewal_proposal:
+    - renewed
+    - churned
+  renewed:
+    - active_customer
+    - renewal_due
+  churned: []
+
+opportunity:
+  lead:
+    - qualified
+    - closed_lost
+  qualified:
+    - discovery
+    - proposal
+    - closed_lost
+  discovery:
+    - proposal
+    - closed_lost
+  proposal:
+    - negotiation
+    - closed_lost
+  negotiation:
+    - closed_won
+    - closed_lost
+  closed_won: []
+  closed_lost: []
+  renewal_due:
+    - renewal_proposal
+    - churned
+  renewal_proposal:
+    - renewed
+    - churned
+  renewed: []
+  churned: []

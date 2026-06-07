@@ -1,0 +1,82 @@
+name: proposal-apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "platform/proposals/mutations/*.yaml"
+      - "modules/**/*.yaml"
+      - "packages/**"
+      - ".github/workflows/proposal-apply.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  proposal-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Record merged proposal evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: packages/company_os_core/src:packages/company_os_cli/src
+        shell: bash
+        run: |
+          mkdir -p .opra
+          review_args=()
+          pr_number="$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number // empty')"
+          if [ -n "$pr_number" ]; then
+            gh pr view "$pr_number" \
+              --json number,url,reviews \
+              > .opra/github-pr-reviews.json
+            review_args=(--github-review-file .opra/github-pr-reviews.json)
+          else
+            echo "No merged pull request found for ${{ github.sha }}."
+          fi
+
+          shopt -s nullglob
+          proposal_files=(platform/proposals/mutations/proposal_*.yaml)
+
+          if [ ${#proposal_files[@]} -eq 0 ]; then
+            echo "No mutation proposal artifacts found."
+            exit 0
+          fi
+
+          changed=0
+          for proposal_file in "${proposal_files[@]}"; do
+            if grep -q '^status: applied$' "$proposal_file"; then
+              echo "Already applied: $proposal_file"
+              continue
+            fi
+
+            python -m company_os_cli record-proposal-merge \
+              --file "$proposal_file" \
+              --actor github-actions \
+              "${review_args[@]}"
+            changed=1
+          done
+
+          if [ "$changed" -eq 0 ]; then
+            echo "No proposal evidence changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/proposals/mutations platform/audit/events
+          if git diff --cached --quiet; then
+            echo "No proposal evidence changes to commit."
+            exit 0
+          fi
+          git commit -m "Record applied proposal evidence"
+          git push

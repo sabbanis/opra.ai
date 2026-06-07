@@ -1,0 +1,9 @@
+# opra.ai governance owners.
+/.github/CODEOWNERS @sabbanis
+/.github/workflows/ @sabbanis
+/platform/rbac/ @sabbanis
+/platform/proposals/mutations/ @sabbanis
+/platform/integrations/github/approval_owners.yaml @sabbanis
+/modules/crm/objects/ @sabbanis
+/modules/issues/ @sabbanis
+/modules/hr/ @sabbanis

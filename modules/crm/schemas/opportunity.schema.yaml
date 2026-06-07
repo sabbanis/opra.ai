@@ -1,0 +1,100 @@
+object_type: opportunity
+version: 1
+fields:
+  - name: id
+    type: string
+    required: true
+  - name: object_type
+    type: string
+    required: true
+  - name: owner
+    type: string
+    required: true
+  - name: created_by
+    type: string
+    required: true
+  - name: updated_by
+    type: string
+    required: true
+  - name: created_at
+    type: timestamp
+    required: true
+  - name: updated_at
+    type: timestamp
+    required: true
+  - name: version
+    type: integer
+    required: true
+    min_value: 1
+  - name: status
+    type: string
+    required: true
+    allowed_values:
+      - active
+      - archived
+      - deleted
+  - name: visibility
+    type: string
+    required: true
+    allowed_values:
+      - private
+      - team
+      - company
+  - name: links
+    type: array
+    required: true
+    item_type: object
+  - name: tags
+    type: array
+    required: true
+    item_type: string
+  - name: metadata
+    type: object
+    required: true
+  - name: account_id
+    type: string
+    required: true
+  - name: stage
+    type: string
+    required: true
+    allowed_values:
+      - lead
+      - qualified
+      - discovery
+      - proposal
+      - negotiation
+      - closed_won
+      - closed_lost
+      - renewal_due
+      - renewal_proposal
+      - renewed
+      - churned
+  - name: amount
+    type: integer
+    required: true
+    min_value: 0
+  - name: probability
+    type: number
+    required: true
+    min_value: 0
+    max_value: 1
+  - name: close_date
+    type: date
+    required: true
+  - name: discount_requested
+    type: integer
+    required: true
+    min_value: 0
+    max_value: 100
+  - name: next_step
+    type: string
+    required: true
+  - name: approval_status
+    type: string
+    required: true
+    allowed_values:
+      - not_required
+      - pending_manager
+      - pending_finance
+      - approved
+      - rejected

@@ -1,0 +1,14 @@
+version: 1
+subjects:
+  - subject: founder
+    owners:
+      - @sabbanis
+  - subject: role:founder
+    owners:
+      - @sabbanis
+  - subject: sales_manager
+    owners:
+      - @sabbanis
+  - subject: role:sales_manager
+    owners:
+      - @sabbanis

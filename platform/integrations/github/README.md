@@ -1,0 +1,15 @@
+# GitHub Integration
+
+GitHub integration configuration and local preview artifacts live here.
+
+Current local artifact type:
+
+- `pr_previews`: mock pull-request payloads generated before real GitHub publishing.
+- `issue_previews`: mock issue payloads generated before real GitHub issue creation/update.
+- `approval_owners.yaml`: mapping from opra.ai required-approver subjects to GitHub owners.
+
+Real proposal publishing uses the local `git` and `gh` CLIs through `publish-proposal-pr --real`.
+Real issue creation and update use the local `gh` CLI through `create-github-issue --real` and `update-github-issue --real`.
+Proposal PR validation can consume `gh pr view --json number,url,reviews` output and verify that required opra.ai approvers have corresponding GitHub approvals.
+The proposal-check workflow writes validation reports to the Actions summary and upserts a sticky PR comment.
+No credentials or tokens belong in this directory.
