@@ -43,7 +43,7 @@ Submit as a URL post, then immediately add the first comment below.
 Visual:
 
 ```text
-The GitHub README includes the governed operating loop diagram. Do not upload
+The GitHub README includes the governed operating loop GIF. Do not upload
 carousel images to Hacker News.
 ```
 

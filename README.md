@@ -7,7 +7,7 @@ opra.ai stores business records as human-readable files, validates them locally,
 This repository is the free developer-preview edition. It is meant for local evaluation, forks, demos, and self-directed experimentation.
 
 <p align="center">
-  <img src="docs/assets/opra-operating-loop.svg" alt="opra.ai governed operating loop: intent, policy, proposal, GitHub review, source objects, audit evidence, dashboards, and Skills" width="720">
+  <img src="docs/assets/opra-launch-loop.gif" alt="Animated opra.ai governed write path: intent, policy, review, state, audit, and dashboard" width="720">
 </p>
 
 ## What You Can Do Today
