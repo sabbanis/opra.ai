@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Mapping, Optional
@@ -17,6 +18,7 @@ from company_os_core import (
     RBACEngine,
     Role,
     User,
+    approval_required,
 )
 from company_os_core.serialization import to_json
 
@@ -71,6 +73,21 @@ def _handler_for(api: LocalReadAPI):
             )
             self._write_json(response)
 
+        def do_POST(self) -> None:
+            parsed = urlparse(self.path)
+            try:
+                body = _read_json_body(self)
+            except ValueError as exc:
+                self._write_json(APIResponse(status_code=400, body={"error": str(exc)}))
+                return
+
+            response = api.handle_post(
+                path=parsed.path,
+                body=body,
+                user=_user_from_headers(self.headers),
+            )
+            self._write_json(response)
+
         def log_message(self, format: str, *args) -> None:
             return
 
@@ -95,6 +112,27 @@ def _handler_for(api: LocalReadAPI):
             self.wfile.write(payload)
 
     return CompanyOSAPIHandler
+
+
+def _read_json_body(handler: BaseHTTPRequestHandler) -> Mapping[str, object]:
+    raw_length = handler.headers.get("Content-Length", "0")
+    try:
+        length = int(raw_length)
+    except ValueError as exc:
+        raise ValueError("Invalid Content-Length header.") from exc
+    if length <= 0:
+        return {}
+    if length > 1_000_000:
+        raise ValueError("Request body is too large.")
+
+    payload = handler.rfile.read(length).decode("utf-8")
+    try:
+        body = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Request body must be valid JSON.") from exc
+    if not isinstance(body, Mapping):
+        raise ValueError("Request body must be a JSON object.")
+    return body
 
 
 def _wants_html(headers) -> bool:
@@ -122,10 +160,12 @@ def _single_value_query(values: Mapping[str, list[str]]) -> Mapping[str, str]:
 
 
 def _user_from_headers(headers) -> User:
-    username = headers.get("X-Company-OS-User", "")
+    username = headers.get("X-Opra-User", "") or headers.get("X-Company-OS-User", "")
     roles = tuple(
         role.strip()
-        for role in headers.get("X-Company-OS-Roles", "").split(",")
+        for role in (
+            headers.get("X-Opra-Roles", "") or headers.get("X-Company-OS-Roles", "")
+        ).split(",")
         if role.strip()
     )
     return User(id=username or "anonymous", username=username or "anonymous", roles=roles)
@@ -148,6 +188,37 @@ def _demo_policy_engine() -> PolicyEngine:
                 object_type="opportunity",
                 scope="company",
             ),
+            Permission(
+                subject="sales_rep",
+                action=PermissionAction.UPDATE,
+                object_type="account",
+                scope="owned_by_me",
+                fields=("status", "tags", "metadata"),
+            ),
+        ),
+    )
+    sales_manager = Role(
+        id="sales_manager",
+        name="Sales Manager",
+        permissions=(
+            Permission(
+                subject="sales_manager",
+                action=PermissionAction.READ,
+                object_type="account",
+                scope="company",
+            ),
+            Permission(
+                subject="sales_manager",
+                action=PermissionAction.READ,
+                object_type="opportunity",
+                scope="company",
+            ),
+            Permission(
+                subject="sales_manager",
+                action=PermissionAction.APPROVE,
+                object_type="account",
+                scope="company",
+            ),
         ),
     )
     founder = Role(
@@ -162,7 +233,19 @@ def _demo_policy_engine() -> PolicyEngine:
             ),
         ),
     )
-    return PolicyEngine(rbac=RBACEngine(roles=(founder, sales_rep)))
+    return PolicyEngine(
+        rbac=RBACEngine(roles=(founder, sales_rep, sales_manager)),
+        approval_rules=(
+            approval_required(
+                object_type="account",
+                action=PermissionAction.UPDATE,
+                fields=("metadata",),
+                required_approvers=("sales_manager",),
+                reason="Account metadata changes require sales manager approval in demo policy.",
+                rule_id="account_metadata_approval",
+            ),
+        ),
+    )
 
 
 if __name__ == "__main__":

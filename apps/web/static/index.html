@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>opra.ai CRM</title>
+    <title>opra.ai Workspace</title>
     <link rel="stylesheet" href="/static/app.css">
   </head>
   <body>
@@ -12,105 +12,313 @@
         <div class="brand-mark" aria-hidden="true">OP</div>
         <div>
           <h1>opra.ai</h1>
-          <p>CRM control plane</p>
+          <p>Governed workspace</p>
         </div>
       </div>
       <div class="header-actions">
-        <span class="identity">ssabbani · sales_rep</span>
+        <label class="field compact">
+          <span>Identity</span>
+          <select id="identitySelect">
+            <option value="founder">Founder</option>
+            <option value="sales_rep">Sales Rep</option>
+            <option value="sales_manager">Sales Manager</option>
+          </select>
+        </label>
         <button id="refreshButton" type="button">Refresh</button>
       </div>
     </header>
 
+    <nav class="tabbar" aria-label="Workspace views">
+      <button class="active" type="button" data-view="dashboard">Dashboard</button>
+      <button type="button" data-view="records">Records</button>
+      <button type="button" data-view="proposals">Proposals</button>
+      <button type="button" data-view="github">GitHub</button>
+      <button type="button" data-view="audit">Audit</button>
+    </nav>
+
     <main class="workspace">
-      <section class="metrics" aria-label="CRM metrics">
-        <article class="metric">
-          <span>Accounts</span>
-          <strong id="accountCount">0</strong>
-        </article>
-        <article class="metric">
-          <span>Total ARR</span>
-          <strong id="totalArr">$0</strong>
-        </article>
-        <article class="metric">
-          <span>Open pipeline</span>
-          <strong id="openPipeline">$0</strong>
-        </article>
-        <article class="metric">
-          <span>Weighted pipeline</span>
-          <strong id="weightedPipeline">$0</strong>
-        </article>
-        <article class="metric attention">
-          <span>At risk</span>
-          <strong id="atRisk">0</strong>
-        </article>
+      <section class="view active" id="dashboardView">
+        <section class="metrics" aria-label="CRM metrics">
+          <article class="metric">
+            <span>Accounts</span>
+            <strong id="accountCount">0</strong>
+          </article>
+          <article class="metric">
+            <span>Total ARR</span>
+            <strong id="totalArr">$0</strong>
+          </article>
+          <article class="metric">
+            <span>Open pipeline</span>
+            <strong id="openPipeline">$0</strong>
+          </article>
+          <article class="metric">
+            <span>Weighted pipeline</span>
+            <strong id="weightedPipeline">$0</strong>
+          </article>
+          <article class="metric attention">
+            <span>At risk</span>
+            <strong id="atRisk">0</strong>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <section class="panel wide">
+            <div class="panel-heading">
+              <div>
+                <h2>Accounts</h2>
+                <p id="generatedAt">Updated locally</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Stage</th>
+                    <th>Health</th>
+                    <th>ARR</th>
+                    <th>Renewal</th>
+                    <th>Pipeline</th>
+                  </tr>
+                </thead>
+                <tbody id="accountsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Skill Result</h2>
+                <p id="skillSummary">Pending</p>
+              </div>
+            </div>
+            <div class="segmented" role="group" aria-label="CRM skills">
+              <button class="active" type="button" data-skill="pipeline-summary">Pipeline</button>
+              <button type="button" data-skill="renewal-health">Renewal</button>
+              <button type="button" data-skill="opportunity-view">Open opps</button>
+            </div>
+            <pre id="skillOutput">{}</pre>
+          </section>
+
+          <section class="panel wide">
+            <div class="panel-heading">
+              <div>
+                <h2>Opportunities</h2>
+                <p id="opportunityCount">0 open records</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Opportunity</th>
+                    <th>Account</th>
+                    <th>Stage</th>
+                    <th>Amount</th>
+                    <th>Weighted</th>
+                    <th>Close</th>
+                  </tr>
+                </thead>
+                <tbody id="opportunitiesTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
       </section>
 
-      <section class="content-grid">
-        <section class="panel wide">
-          <div class="panel-heading">
-            <div>
-              <h2>Accounts</h2>
-              <p id="generatedAt">Updated locally</p>
+      <section class="view" id="recordsView">
+        <section class="records-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Source Records</h2>
+                <p id="objectCount">0 files</p>
+              </div>
+              <select id="objectTypeFilter" aria-label="Object type filter">
+                <option value="">All</option>
+                <option value="account">Accounts</option>
+                <option value="opportunity">Opportunities</option>
+                <option value="defect">Defects</option>
+                <option value="employee">Employees</option>
+              </select>
             </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Stage</th>
-                  <th>Health</th>
-                  <th>ARR</th>
-                  <th>Renewal</th>
-                  <th>Pipeline</th>
-                </tr>
-              </thead>
-              <tbody id="accountsTable"></tbody>
-            </table>
-          </div>
-        </section>
+            <div class="list" id="objectList"></div>
+          </section>
 
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Skill Result</h2>
-              <p id="skillSummary">Pending</p>
+          <section class="panel editor-panel">
+            <div class="panel-heading">
+              <div>
+                <h2 id="selectedObjectTitle">Record</h2>
+                <p id="selectedObjectPath">No file selected</p>
+              </div>
             </div>
-          </div>
-          <div class="segmented" role="group" aria-label="CRM skills">
-            <button class="active" type="button" data-skill="pipeline-summary">Pipeline</button>
-            <button type="button" data-skill="renewal-health">Renewal</button>
-            <button type="button" data-skill="opportunity-view">Open opps</button>
-          </div>
-          <pre id="skillOutput">{}</pre>
-        </section>
+            <textarea id="objectEditor" spellcheck="false"></textarea>
+            <div class="action-row">
+              <label class="field">
+                <span>Action</span>
+                <select id="recordAction">
+                  <option value="update">Update</option>
+                  <option value="create">Create</option>
+                  <option value="read">Read</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Fields</span>
+                <input id="recordFields" type="text" placeholder="metadata,tags,status">
+              </label>
+              <label class="field">
+                <span>Request</span>
+                <input id="requestId" type="text">
+              </label>
+            </div>
+            <div class="button-row">
+              <button id="validateObjectButton" type="button">Validate</button>
+              <button id="policyCheckButton" type="button">Policy</button>
+              <button id="governedWriteButton" type="button">Write</button>
+              <button class="primary" id="createProposalButton" type="button">Propose</button>
+            </div>
+          </section>
 
-        <section class="panel wide">
-          <div class="panel-heading">
-            <div>
-              <h2>Opportunities</h2>
-              <p id="opportunityCount">0 open records</p>
+          <section class="panel output-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Result</h2>
+                <p id="recordResultSummary">Idle</p>
+              </div>
             </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Opportunity</th>
-                  <th>Account</th>
-                  <th>Stage</th>
-                  <th>Amount</th>
-                  <th>Weighted</th>
-                  <th>Close</th>
-                </tr>
-              </thead>
-              <tbody id="opportunitiesTable"></tbody>
-            </table>
-          </div>
+            <pre id="recordOutput">{}</pre>
+          </section>
         </section>
       </section>
 
-      <p class="status" id="statusLine">Loading CRM data</p>
+      <section class="view" id="proposalsView">
+        <section class="proposal-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Proposals</h2>
+                <p id="proposalCount">0 files</p>
+              </div>
+            </div>
+            <div class="list" id="proposalList"></div>
+          </section>
+
+          <section class="panel proposal-detail">
+            <div class="panel-heading">
+              <div>
+                <h2 id="selectedProposalTitle">Proposal</h2>
+                <p id="selectedProposalPath">No proposal selected</p>
+              </div>
+            </div>
+            <div class="detail-strip" id="proposalFacts"></div>
+            <label class="field reason-field">
+              <span>Reason</span>
+              <input id="proposalReason" type="text">
+            </label>
+            <div class="button-row">
+              <button id="approveProposalButton" type="button">Approve</button>
+              <button id="rejectProposalButton" type="button">Reject</button>
+              <button id="applyProposalButton" type="button">Apply</button>
+              <button id="publishPrButton" type="button">PR Preview</button>
+              <button id="validatePrButton" type="button">PR Check</button>
+            </div>
+            <pre id="proposalOutput">{}</pre>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="githubView">
+        <section class="github-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>PR Previews</h2>
+                <p id="prPreviewCount">0 files</p>
+              </div>
+            </div>
+            <div class="list" id="prPreviewList"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Issue Preview</h2>
+                <p id="issueResultSummary">Idle</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>Number</span>
+                <input id="issueNumber" type="number" min="1">
+              </label>
+              <label class="field">
+                <span>State</span>
+                <select id="issueState">
+                  <option value="">No change</option>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </label>
+              <label class="field span-2">
+                <span>Title</span>
+                <input id="issueTitle" type="text">
+              </label>
+              <label class="field span-2">
+                <span>Labels</span>
+                <input id="issueLabels" type="text" placeholder="crm,workflow">
+              </label>
+              <label class="field span-2">
+                <span>Assignees</span>
+                <input id="issueAssignees" type="text">
+              </label>
+              <label class="field span-2">
+                <span>Body</span>
+                <textarea id="issueBody"></textarea>
+              </label>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="createIssueButton" type="button">Create</button>
+              <button id="updateIssueButton" type="button">Update</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Issue Previews</h2>
+                <p id="issuePreviewCount">0 files</p>
+              </div>
+            </div>
+            <div class="list" id="issuePreviewList"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="auditView">
+        <section class="audit-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Audit Events</h2>
+                <p id="auditCount">0 files</p>
+              </div>
+            </div>
+            <div class="list" id="auditList"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Event Detail</h2>
+                <p id="auditPath">No event selected</p>
+              </div>
+            </div>
+            <pre id="auditOutput">{}</pre>
+          </section>
+        </section>
+      </section>
+
+      <p class="status" id="statusLine">Loading workspace</p>
     </main>
 
     <script src="/static/app.js"></script>

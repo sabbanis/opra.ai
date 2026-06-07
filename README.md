@@ -17,7 +17,7 @@ This repository is the free developer-preview edition. It is meant for local eva
 - Generate proposal check reports for Actions summaries.
 - Build local CRM dashboard read models.
 - Run local CRM Skills.
-- Use a browser CRM dashboard from a local API server.
+- Use a browser workspace from a local API server for CRM, records, proposals, GitHub previews, and audit evidence.
 - Create and update mock GitHub Issue previews.
 - Publish real proposal PRs and GitHub Issues with `gh` when you choose to use live GitHub integration.
 
@@ -26,7 +26,7 @@ This repository is the free developer-preview edition. It is meant for local eva
 - The CLI module names are still `company_os_cli` and `company_os_core` during this developer preview.
 - CRM is the primary complete demo path.
 - Issue Management and HR scaffolds exist, but CRM has the strongest local workflow coverage.
-- The browser UI is a local demo UI, not a polished local application.
+- The browser workspace is local-first and intentionally dependency-free.
 - GitHub integration uses the local `git` and `gh` CLIs for live operations.
 
 ## Quickstart

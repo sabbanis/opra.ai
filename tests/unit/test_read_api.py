@@ -20,8 +20,9 @@ from company_os_core import (
     RBACEngine,
     Role,
     User,
+    approval_required,
 )
-from company_os_core.serialization import write_yaml
+from company_os_core.serialization import read_yaml, write_yaml
 
 
 TIMESTAMP = datetime(2026, 6, 6, 10, 0, 0, tzinfo=timezone.utc)
@@ -40,6 +41,7 @@ class LocalReadAPITests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.body["name"], "opra.ai API")
         self.assertIn("/crm/summary", response.body["endpoints"])
+        self.assertIn("/proposals", response.body["endpoints"])
 
     def test_health_returns_ok_without_crm_data(self) -> None:
         api = LocalReadAPI(repo_root=Path("."), policy_engine=self._policy_engine())
@@ -135,6 +137,126 @@ class LocalReadAPITests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_objects_endpoint_lists_and_validates_source_records(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_seed(root)
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+
+            list_response = api.handle_get(
+                path="/objects",
+                query={},
+                user=User(id="ssabbani", username="ssabbani", roles=("sales_rep",)),
+            )
+
+            self.assertEqual(list_response.status_code, 200)
+            self.assertEqual(len(list_response.body["objects"]), 2)
+
+            validate_response = api.handle_post(
+                path="/objects/validate",
+                body={"path": "modules/crm/objects/accounts/acct_acme.yaml"},
+                user=User(id="ssabbani", username="ssabbani", roles=("sales_rep",)),
+            )
+
+            self.assertEqual(validate_response.status_code, 200)
+            self.assertTrue(validate_response.body["valid"])
+            self.assertEqual(validate_response.body["object_type"], "account")
+
+    def test_proposal_lifecycle_can_be_driven_through_api(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_seed(root)
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+            account_path = root / "modules/crm/objects/accounts/acct_acme.yaml"
+            account = dict(read_yaml(account_path))
+            account["metadata"] = {"source": "workspace"}
+            account["updated_at"] = "2026-06-06T10:05:00Z"
+            account["version"] = 2
+
+            created = api.handle_post(
+                path="/proposals",
+                body={
+                    "object": account,
+                    "action": "update",
+                    "request_id": "req_workspace_metadata",
+                    "fields": ["metadata"],
+                },
+                user=User(id="ssabbani", username="ssabbani", roles=("sales_rep",)),
+            )
+
+            self.assertEqual(created.status_code, 201)
+            proposal = created.body["proposal"]
+            proposal_id = proposal["id"]
+            self.assertEqual(proposal["status"], "proposed")
+            self.assertEqual(proposal["required_approvers"], ["sales_manager"])
+
+            approved = api.handle_post(
+                path=f"/proposals/{proposal_id}/approve",
+                body={"reason": "metadata approved"},
+                user=User(id="ssabbani", username="ssabbani", roles=("sales_manager",)),
+            )
+
+            self.assertEqual(approved.status_code, 200)
+            self.assertEqual(approved.body["proposal"]["status"], "approved")
+
+            applied = api.handle_post(
+                path=f"/proposals/{proposal_id}/apply",
+                body={},
+                user=User(id="ssabbani", username="ssabbani", roles=("founder",)),
+            )
+
+            self.assertEqual(applied.status_code, 200)
+            self.assertEqual(applied.body["proposal"]["status"], "applied")
+            self.assertEqual(read_yaml(account_path)["metadata"], {"source": "workspace"})
+
+            audit = api.handle_get(
+                path="/audit/events",
+                query={},
+                user=User(id="ssabbani", username="ssabbani", roles=("founder",)),
+            )
+
+            self.assertEqual(audit.status_code, 200)
+            self.assertEqual(len(audit.body["events"]), 1)
+            self.assertEqual(audit.body["events"][0]["event"]["source"]["interface"], "web")
+
+    def test_github_issue_preview_create_and_update(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+            user = User(id="ssabbani", username="ssabbani", roles=("founder",))
+
+            created = api.handle_post(
+                path="/github/issues",
+                body={
+                    "title": "Workspace smoke issue",
+                    "body": "Created from the local UI.",
+                    "labels": ["crm"],
+                },
+                user=user,
+            )
+
+            self.assertEqual(created.status_code, 201)
+            self.assertEqual(created.body["issue"]["number"], 1)
+
+            updated = api.handle_post(
+                path="/github/issues/1",
+                body={"state": "closed", "labels": ["validated"]},
+                user=user,
+            )
+
+            self.assertEqual(updated.status_code, 200)
+            self.assertEqual(updated.body["issue"]["state"], "closed")
+            self.assertEqual(updated.body["issue"]["labels"], ["crm", "validated"])
+
+            previews = api.handle_get(
+                path="/github/previews/issues",
+                query={},
+                user=user,
+            )
+
+            self.assertEqual(previews.status_code, 200)
+            self.assertEqual(len(previews.body["issues"]), 1)
+
     def test_unknown_route_returns_not_found(self) -> None:
         api = LocalReadAPI(repo_root=Path("."), policy_engine=self._policy_engine())
 
@@ -147,6 +269,18 @@ class LocalReadAPITests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def _policy_engine(self) -> PolicyEngine:
+        founder = Role(
+            id="founder",
+            name="Founder",
+            permissions=(
+                Permission(
+                    subject="founder",
+                    action=PermissionAction.ALL,
+                    object_type="*",
+                    scope="company",
+                ),
+            ),
+        )
         sales_rep = Role(
             id="sales_rep",
             name="Sales Rep",
@@ -163,9 +297,46 @@ class LocalReadAPITests(unittest.TestCase):
                     object_type="opportunity",
                     scope="company",
                 ),
+                Permission(
+                    subject="sales_rep",
+                    action=PermissionAction.UPDATE,
+                    object_type="account",
+                    scope="owned_by_me",
+                    fields=("status", "tags", "metadata"),
+                ),
             ),
         )
-        return PolicyEngine(rbac=RBACEngine(roles=(sales_rep,)))
+        sales_manager = Role(
+            id="sales_manager",
+            name="Sales Manager",
+            permissions=(
+                Permission(
+                    subject="sales_manager",
+                    action=PermissionAction.READ,
+                    object_type="account",
+                    scope="company",
+                ),
+                Permission(
+                    subject="sales_manager",
+                    action=PermissionAction.APPROVE,
+                    object_type="account",
+                    scope="company",
+                ),
+            ),
+        )
+        return PolicyEngine(
+            rbac=RBACEngine(roles=(founder, sales_rep, sales_manager)),
+            approval_rules=(
+                approval_required(
+                    object_type="account",
+                    action=PermissionAction.UPDATE,
+                    fields=("metadata",),
+                    required_approvers=("sales_manager",),
+                    reason="Account metadata changes require sales manager approval in demo policy.",
+                    rule_id="account_metadata_approval",
+                ),
+            ),
+        )
 
     def _write_seed(self, root: Path) -> None:
         self._write_account(root, self._account())
