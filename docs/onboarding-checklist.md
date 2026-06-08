@@ -20,6 +20,25 @@ Use this checklist when evaluating opra.ai locally or preparing a fork.
 - [ ] Local API starts with `python3 apps/api/server.py --repo-root . --port 8080`.
 - [ ] Browser dashboard loads at `http://127.0.0.1:8080/`.
 
+## Persona Onboarding
+
+- [ ] Owner can sign in with UID `owner`.
+- [ ] Company OS Admin can sign in with UID `admin`.
+- [ ] Customer Operator can sign in with UID `customer_operator`.
+- [ ] Support Engineer can sign in with UID `support_engineer`.
+- [ ] Hiring Manager can sign in with UID `hiring_manager`.
+- [ ] Each persona lands on the Onboarding tab.
+- [ ] Each persona only sees the modules intended for that persona.
+- [ ] Owner or Company OS Admin can open Users.
+- [ ] A non-admin user receives an access denied response for Users.
+- [ ] Persona onboarding docs are reviewed: [Persona Onboarding](persona-onboarding.md).
+
+## Architecture And TAVA
+
+- [ ] Architecture diagram is reviewed: [End-to-End Architecture](end-to-end-architecture.md).
+- [ ] TAVA is reviewed: [Threat and Vulnerability Assessment](threat-and-vulnerability-assessment.md).
+- [ ] TAVA open gaps are accepted for local demo usage or assigned for remediation.
+
 ## Governed Workflow
 
 - [ ] A proposal artifact can be created with `propose-mutation`.

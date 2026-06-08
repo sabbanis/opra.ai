@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Company OS operating workflow</title>
+  <desc id="desc">Identity, persona scope, module work, policy decision, approval, commit, and audit evidence flow.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8fbfc"/>
+      <stop offset="1" stop-color="#eef5f3"/>
+    </linearGradient>
+    <marker id="arrow" markerHeight="10" markerWidth="10" orient="auto" refX="8" refY="3">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#115e59"/>
+    </marker>
+    <style>
+      .bg { fill: url(#bg); }
+      .title { fill: #172026; font: 800 34px Inter, Arial, sans-serif; }
+      .subtitle { fill: #64727c; font: 500 16px Inter, Arial, sans-serif; }
+      .node { fill: #ffffff; stroke: #d9e1e6; stroke-width: 2; }
+      .node-title { fill: #172026; font: 800 18px Inter, Arial, sans-serif; }
+      .node-text { fill: #64727c; font: 500 13px Inter, Arial, sans-serif; }
+      .chip { font: 800 12px Inter, Arial, sans-serif; }
+      .line { stroke: #115e59; stroke-width: 3; marker-end: url(#arrow); }
+      .teal { fill: #0f766e; }
+      .blue { fill: #2457a6; }
+      .amber { fill: #a16207; }
+      .rose { fill: #9f1239; }
+      .green { fill: #13795b; }
+      .white { fill: #ffffff; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="420" rx="0"/>
+  <text class="title" x="54" y="66">Company OS Operating Flow</text>
+  <text class="subtitle" x="54" y="94">Every persona starts with identity, works inside a scoped module, and leaves an auditable trail.</text>
+
+  <g transform="translate(54 138)">
+    <rect class="node" x="0" y="0" width="150" height="150" rx="8"/>
+    <rect class="teal" x="0" y="0" width="150" height="8" rx="4"/>
+    <circle class="teal" cx="28" cy="36" r="16"/>
+    <text class="chip white" x="22" y="40">01</text>
+    <text class="node-title" x="20" y="76">Sign in</text>
+    <text class="node-text" x="20" y="102">UID, passcode,</text>
+    <text class="node-text" x="20" y="122">local session</text>
+  </g>
+  <line class="line" x1="214" y1="213" x2="280" y2="213"/>
+
+  <g transform="translate(292 138)">
+    <rect class="node" x="0" y="0" width="150" height="150" rx="8"/>
+    <rect class="blue" x="0" y="0" width="150" height="8" rx="4"/>
+    <circle class="blue" cx="28" cy="36" r="16"/>
+    <text class="chip white" x="22" y="40">02</text>
+    <text class="node-title" x="20" y="76">Scope</text>
+    <text class="node-text" x="20" y="102">Persona gates</text>
+    <text class="node-text" x="20" y="122">visible modules</text>
+  </g>
+  <line class="line" x1="452" y1="213" x2="518" y2="213"/>
+
+  <g transform="translate(530 138)">
+    <rect class="node" x="0" y="0" width="150" height="150" rx="8"/>
+    <rect class="amber" x="0" y="0" width="150" height="8" rx="4"/>
+    <circle class="amber" cx="28" cy="36" r="16"/>
+    <text class="chip white" x="22" y="40">03</text>
+    <text class="node-title" x="20" y="76">Capture</text>
+    <text class="node-text" x="20" y="102">Create, update,</text>
+    <text class="node-text" x="20" y="122">validate work</text>
+  </g>
+  <line class="line" x1="690" y1="213" x2="756" y2="213"/>
+
+  <g transform="translate(768 138)">
+    <rect class="node" x="0" y="0" width="150" height="150" rx="8"/>
+    <rect class="rose" x="0" y="0" width="150" height="8" rx="4"/>
+    <circle class="rose" cx="28" cy="36" r="16"/>
+    <text class="chip white" x="22" y="40">04</text>
+    <text class="node-title" x="20" y="76">Decide</text>
+    <text class="node-text" x="20" y="102">Allow, deny,</text>
+    <text class="node-text" x="20" y="122">or approve</text>
+  </g>
+  <line class="line" x1="928" y1="213" x2="994" y2="213"/>
+
+  <g transform="translate(1006 138)">
+    <rect class="node" x="0" y="0" width="150" height="150" rx="8"/>
+    <rect class="green" x="0" y="0" width="150" height="8" rx="4"/>
+    <circle class="green" cx="28" cy="36" r="16"/>
+    <text class="chip white" x="22" y="40">05</text>
+    <text class="node-title" x="20" y="76">Evidence</text>
+    <text class="node-text" x="20" y="102">Commit, publish,</text>
+    <text class="node-text" x="20" y="122">audit event</text>
+  </g>
+
+  <g transform="translate(54 330)">
+    <rect x="0" y="0" width="1098" height="48" rx="8" fill="#ffffff" stroke="#d9e1e6"/>
+    <text class="subtitle" x="22" y="30">Operating rule: if the user cannot explain the work item, policy decision, and audit evidence, the workflow is not done.</text>
+  </g>
+</svg>

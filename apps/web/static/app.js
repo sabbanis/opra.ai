@@ -2,73 +2,73 @@ const PERSONAS = {
   owner: {
     label: "Owner",
     roles: ["founder"],
-    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
+    views: ["onboarding", "modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
     modules: ["crm", "issues", "hr"],
     templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
-    landingView: "modules",
+    landingView: "onboarding",
     summary: "Full Company OS access",
   },
   company_os_admin: {
     label: "Company OS Admin",
     roles: ["company_os_admin"],
-    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
+    views: ["onboarding", "modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
     modules: ["crm", "issues", "hr"],
     templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
-    landingView: "modules",
+    landingView: "onboarding",
     summary: "System operations, approvals, publishing, and evidence",
   },
   customer_lead: {
     label: "Customer Lead",
     roles: ["customer_lead", "sales_manager"],
-    views: ["crm", "records", "proposals", "audit"],
+    views: ["onboarding", "crm", "records", "proposals", "audit"],
     modules: ["crm"],
     templates: ["crm_account", "crm_opportunity"],
-    landingView: "crm",
+    landingView: "onboarding",
     summary: "Customer pipeline, renewals, approvals, and CRM work items",
   },
   customer_operator: {
     label: "Customer Operator",
     roles: ["customer_operator", "sales_rep"],
-    views: ["crm", "records", "proposals", "audit"],
+    views: ["onboarding", "crm", "records", "proposals", "audit"],
     modules: ["crm"],
     templates: ["crm_opportunity"],
-    landingView: "crm",
+    landingView: "onboarding",
     summary: "Customer accounts, open deals, and CRM work changes",
   },
   engineering_lead: {
     label: "Engineering Lead",
     roles: ["engineering_lead"],
-    views: ["issues", "records", "proposals", "audit"],
+    views: ["onboarding", "issues", "records", "proposals", "audit"],
     modules: ["issues"],
     templates: ["issue_defect", "issue_incident", "issue_release"],
-    landingView: "issues",
+    landingView: "onboarding",
     summary: "Delivery work, incidents, releases, and evidence",
   },
   support_engineer: {
     label: "Support Engineer",
     roles: ["support_engineer"],
-    views: ["issues", "records", "proposals", "audit"],
+    views: ["onboarding", "issues", "records", "proposals", "audit"],
     modules: ["issues"],
     templates: ["issue_defect", "issue_incident"],
-    landingView: "issues",
+    landingView: "onboarding",
     summary: "Defects, incidents, RCAs, and support evidence",
   },
   people_ops: {
     label: "People Ops",
     roles: ["people_ops"],
-    views: ["hr", "records", "proposals", "audit"],
+    views: ["onboarding", "hr", "records", "proposals", "audit"],
     modules: ["hr"],
     templates: ["hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
-    landingView: "hr",
+    landingView: "onboarding",
     summary: "Hiring, onboarding, employee changes, and people requests",
   },
   hiring_manager: {
     label: "Hiring Manager",
     roles: ["hiring_manager"],
-    views: ["hr", "records", "proposals", "audit"],
+    views: ["onboarding", "hr", "records", "proposals", "audit"],
     modules: ["hr"],
     templates: ["hr_job", "hr_candidate"],
-    landingView: "hr",
+    landingView: "onboarding",
     summary: "Open roles, candidates, interviews, and onboarding requests",
   },
 };
@@ -84,6 +84,233 @@ const ROLE_LABELS = {
   hiring_manager: "Hiring Manager",
   sales_manager: "Customer Lead",
   sales_rep: "Customer Operator",
+};
+
+const ONBOARDING_GUIDES = {
+  owner: {
+    mission: "You own the operating system: users, modules, approvals, publishing, and audit evidence.",
+    workflow: ["Sign in", "Review Company OS", "Assign users", "Unblock work", "Publish evidence"],
+    firstSteps: [
+      "Sign in with UID owner and passcode demo.",
+      "Open Users and confirm every test user has a clear persona.",
+      "Open Home and review Needs Attention, Approvals, and Recent Activity.",
+      "Open each module once: Customers, Delivery, and People.",
+      "Create one safe test work item from Workbench and confirm the result appears in Activity.",
+    ],
+    dailyFlow: [
+      "Start in Home and scan risk, approvals, and recent evidence.",
+      "Open Users when a new operator needs access or a persona must change.",
+      "Open Approvals when a request is waiting for an owner-level decision.",
+      "Open Publishing when a reviewed proposal should become a draft pull request or tracker item.",
+      "End in Activity and confirm important work left an evidence trail.",
+    ],
+    boundaries: [
+      "Do not use shared demo users for real company data.",
+      "Give users the narrowest persona that lets them do their job.",
+      "Treat People data as sensitive even in the local preview.",
+    ],
+    success: [
+      "You can explain who can access each module.",
+      "You can add a user and choose the right persona.",
+      "You can find the audit record for a completed change.",
+    ],
+  },
+  company_os_admin: {
+    mission: "You keep the workspace clean: user setup, operating evidence, approvals, and local system checks.",
+    workflow: ["Sign in", "Check users", "Inspect modules", "Run workflow", "Verify evidence"],
+    firstSteps: [
+      "Sign in with UID admin and passcode demo.",
+      "Open Users and confirm the owner plus module operators are present.",
+      "Open Home and look for incomplete approvals or empty activity.",
+      "Open Workbench and load an existing work item without changing it.",
+      "Open Activity and confirm the workspace history is readable.",
+    ],
+    dailyFlow: [
+      "Refresh the workspace before reviewing work.",
+      "Check Users before adding, removing, or changing access.",
+      "Use Workbench for controlled create, update, validate, policy check, and delete actions.",
+      "Use Approvals to move proposed work through approve, reject, and apply states.",
+      "Use Activity to confirm actions are recorded.",
+    ],
+    boundaries: [
+      "Do not grant Owner unless the person truly owns system-level decisions.",
+      "Do not bypass Workbench for governed business changes.",
+      "Do not publish drafts before checking proposal status.",
+    ],
+    success: [
+      "Every user has a named persona.",
+      "Every important work item has a validation or policy result.",
+      "Publishing and Activity views agree with the latest workflow state.",
+    ],
+  },
+  customer_lead: {
+    mission: "You manage customer health, pipeline movement, renewal risk, and customer approvals.",
+    workflow: ["Sign in", "Review customers", "Prioritize deals", "Approve changes", "Confirm activity"],
+    firstSteps: [
+      "Sign in with UID customer_lead and passcode demo.",
+      "Open Customers and read the customer table from left to right.",
+      "Check Booked ARR, Open pipeline, Weighted pipeline, and Needs follow-up.",
+      "Open Workbench and choose Account or Opportunity only.",
+      "Open Approvals and check whether customer work is waiting for your decision.",
+    ],
+    dailyFlow: [
+      "Start in Customers and look for yellow or red health.",
+      "Open the opportunity list and read the next step on each open deal.",
+      "Use Workbench when account or opportunity data must change.",
+      "Use Approvals when a customer change requires a decision.",
+      "Use Activity to confirm customer work was recorded.",
+    ],
+    boundaries: [
+      "Stay in Customers, Workbench, Approvals, and Activity.",
+      "Do not create Delivery or People records.",
+      "Do not approve work you do not understand from the customer context.",
+    ],
+    success: [
+      "You know which customer needs follow-up.",
+      "You know the next step for the highest value open opportunity.",
+      "You can approve or reject a customer request with a reason.",
+    ],
+  },
+  customer_operator: {
+    mission: "You keep customer records and opportunities current without changing system settings.",
+    workflow: ["Sign in", "Review accounts", "Capture deal work", "Run checks", "Confirm activity"],
+    firstSteps: [
+      "Sign in with UID customer_operator and passcode demo.",
+      "Open Customers and find Acme Corp.",
+      "Open Workbench and choose Opportunity.",
+      "Review the generated fields before creating or updating anything.",
+      "Run Validate or Policy Check before creating a proposal.",
+    ],
+    dailyFlow: [
+      "Start in Customers and identify the account or deal to update.",
+      "Use Workbench to capture the change.",
+      "Use Validate to catch missing or malformed fields.",
+      "Use Policy Check to see whether the change can be committed or needs approval.",
+      "Use Activity to confirm completed work.",
+    ],
+    boundaries: [
+      "Do not use Users, Delivery, People, or Publishing.",
+      "Do not change owner/admin records.",
+      "Use proposals when policy says approval is required.",
+    ],
+    success: [
+      "You can create a customer opportunity proposal.",
+      "You can explain the policy result.",
+      "You can find your customer work in Activity.",
+    ],
+  },
+  engineering_lead: {
+    mission: "You manage delivery work, incidents, releases, and engineering approvals.",
+    workflow: ["Sign in", "Review delivery", "Capture work", "Decide readiness", "Verify evidence"],
+    firstSteps: [
+      "Sign in with UID engineering_lead and passcode demo.",
+      "Open Delivery and review defects, incidents, releases, and RCAs.",
+      "Open Workbench and choose Defect, Incident, or Release.",
+      "Create a safe delivery work item and inspect the policy decision.",
+      "Open Activity and confirm the delivery event is visible.",
+    ],
+    dailyFlow: [
+      "Start in Delivery and sort urgent work from routine work.",
+      "Capture new incidents or defects in Workbench.",
+      "Update releases only when readiness is clear.",
+      "Use Approvals for delivery changes that need a decision.",
+      "Check Activity before ending a review.",
+    ],
+    boundaries: [
+      "Do not manage Users unless you are also Owner or Company OS Admin.",
+      "Do not create People or Customer records from this persona.",
+      "Keep incident notes factual and action-oriented.",
+    ],
+    success: [
+      "Open delivery work is visible and current.",
+      "Release readiness is captured in a governed record.",
+      "Incident or defect changes leave audit evidence.",
+    ],
+  },
+  support_engineer: {
+    mission: "You capture support defects, incidents, and RCA evidence so delivery work is traceable.",
+    workflow: ["Sign in", "Triage issue", "Capture evidence", "Check policy", "Close loop"],
+    firstSteps: [
+      "Sign in with UID support_engineer and passcode demo.",
+      "Open Delivery and read the current work list.",
+      "Open Workbench and choose Defect or Incident.",
+      "Fill in severity, state, owner team, and next step.",
+      "Run Validate before creating the work item.",
+    ],
+    dailyFlow: [
+      "Start in Delivery and identify what needs triage.",
+      "Use Workbench to record a defect or incident.",
+      "Keep next step short and specific.",
+      "Use Approvals only when policy requires a decision.",
+      "Use Activity to verify the support event exists.",
+    ],
+    boundaries: [
+      "Do not create releases unless your persona changes.",
+      "Do not work in Customers or People.",
+      "Do not put secrets or customer-sensitive details into demo data.",
+    ],
+    success: [
+      "A support issue has severity, state, owner team, and next step.",
+      "The issue validates cleanly.",
+      "The event is visible in Activity.",
+    ],
+  },
+  people_ops: {
+    mission: "You operate hiring, onboarding, employee changes, policy acknowledgments, and time off.",
+    workflow: ["Sign in", "Review people work", "Capture request", "Check policy", "Confirm activity"],
+    firstSteps: [
+      "Sign in with UID people_ops and passcode demo.",
+      "Open People and review jobs, candidates, employees, onboarding, and time off.",
+      "Open Workbench and choose Job, Candidate, Employee, or Time Off.",
+      "Review visibility before saving any People work item.",
+      "Open Activity and confirm People work is recorded.",
+    ],
+    dailyFlow: [
+      "Start in People and identify the next hiring or employee action.",
+      "Use Workbench to capture the request.",
+      "Validate the record before asking for approval.",
+      "Use Approvals for changes that need a People decision.",
+      "Confirm the event in Activity.",
+    ],
+    boundaries: [
+      "Treat People records as sensitive.",
+      "Do not create Customer or Delivery records.",
+      "Do not add users unless you have Owner or Company OS Admin access.",
+    ],
+    success: [
+      "People work is captured with the right state and next step.",
+      "Sensitive records use the right visibility.",
+      "You can trace the request in Activity.",
+    ],
+  },
+  hiring_manager: {
+    mission: "You manage open roles, candidates, interviews, offers, and onboarding requests.",
+    workflow: ["Sign in", "Review hiring", "Capture candidate", "Request decision", "Track evidence"],
+    firstSteps: [
+      "Sign in with UID hiring_manager and passcode demo.",
+      "Open People and focus on jobs, candidates, interviews, offers, and onboarding.",
+      "Open Workbench and choose Job or Candidate.",
+      "Fill in stage, source, and next step before saving.",
+      "Use Activity to confirm hiring work is recorded.",
+    ],
+    dailyFlow: [
+      "Start in People and identify the role or candidate to move.",
+      "Use Workbench to record the next hiring step.",
+      "Keep candidate next steps specific.",
+      "Use Approvals when an offer or onboarding request needs a decision.",
+      "Review Activity to confirm the hiring record changed.",
+    ],
+    boundaries: [
+      "Do not manage system users.",
+      "Do not change customer or delivery records.",
+      "Do not put real candidate personal data in demo records.",
+    ],
+    success: [
+      "A hiring item has a clear stage and next step.",
+      "The hiring item validates cleanly.",
+      "The hiring action is visible in Activity.",
+    ],
+  },
 };
 
 const MODULE_META = {
@@ -439,6 +666,7 @@ function applyPersonaShell() {
     <span>${escapeHtml(persona.label)}</span>
     <strong>${escapeHtml(persona.summary)}</strong>
   `;
+  renderOnboarding();
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.hidden = !persona.views.includes(button.dataset.view);
   });
@@ -522,7 +750,7 @@ async function loadWorkspace() {
     personaAllowsModule("crm") ? loadDashboard() : resetCustomerState(),
     loadObjects(),
     loadProposals(),
-    loadPreviews(),
+    currentPersona().views.includes("github") ? loadPreviews() : resetPreviews(),
     loadAuditEvents(),
     currentPersona().views.includes("users") ? loadUsers() : resetUsers(),
   ]);
@@ -547,6 +775,12 @@ async function resetCustomerState() {
 async function resetUsers() {
   state.users = [];
   renderUsers();
+}
+
+async function resetPreviews() {
+  state.prPreviews = [];
+  state.issuePreviews = [];
+  renderPreviews();
 }
 
 async function restoreSession() {
@@ -622,6 +856,43 @@ async function loadUsers() {
   const payload = await fetchJson("/users");
   state.users = payload.users || [];
   renderUsers();
+}
+
+function renderOnboarding() {
+  if (!state.currentUser) {
+    return;
+  }
+  const persona = currentPersona();
+  const guide = ONBOARDING_GUIDES[state.currentUser.persona] || ONBOARDING_GUIDES.owner;
+  byId("onboardingTitle").textContent = `${persona.label} Onboarding`;
+  byId("onboardingSummary").textContent = persona.summary;
+  byId("onboardingMission").textContent = guide.mission;
+  byId("dailyFlowSummary").textContent = `${persona.label} operating rhythm`;
+  byId("boundarySummary").textContent = `${persona.label} access boundaries`;
+  byId("successSummary").textContent = "You are ready when these are true";
+  byId("personaWorkflow").innerHTML = renderWorkflowMap(guide.workflow);
+  byId("firstStepsList").innerHTML = guide.firstSteps.map(instructionRow).join("");
+  byId("dailyFlowList").innerHTML = guide.dailyFlow.map(instructionRow).join("");
+  byId("boundaryList").innerHTML = guide.boundaries.map(instructionRow).join("");
+  byId("successList").innerHTML = guide.success.map(instructionRow).join("");
+}
+
+function renderWorkflowMap(steps) {
+  return steps.map((step, index) => `
+    <span class="journey-node ${escapeHtml(workflowTone(index))}">
+      <strong>${escapeHtml(step)}</strong>
+      <small>${String(index + 1).padStart(2, "0")}</small>
+    </span>
+    ${index < steps.length - 1 ? `<span class="journey-link"></span>` : ""}
+  `).join("");
+}
+
+function workflowTone(index) {
+  return ["identity", "scope", "work", "decision", "evidence"][index] || "work";
+}
+
+function instructionRow(text) {
+  return `<li>${escapeHtml(text)}</li>`;
 }
 
 async function loadModules() {

@@ -277,8 +277,127 @@ textarea {
   margin: 64px auto 0;
 }
 
+.auth-showcase {
+  grid-column: 1 / -1;
+}
+
 .users-grid {
   grid-template-columns: minmax(420px, 0.85fr) minmax(360px, 0.65fr);
+}
+
+.onboarding-hero {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.6fr) minmax(520px, 1.4fr);
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.onboarding-hero h2 {
+  margin-top: 8px;
+  font-size: 28px;
+  line-height: 1.08;
+}
+
+.onboarding-hero p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.eyebrow {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.workflow-map {
+  display: grid;
+  grid-template-columns:
+    minmax(110px, 1fr) 28px minmax(110px, 1fr) 28px minmax(110px, 1fr) 28px
+    minmax(110px, 1fr) 28px minmax(110px, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 150px;
+}
+
+.auth-map {
+  padding: 16px;
+}
+
+.journey-node {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-height: 108px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.journey-node strong {
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.journey-node small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.journey-node.identity {
+  border-left: 5px solid var(--accent);
+}
+
+.journey-node.scope {
+  border-left: 5px solid var(--blue);
+}
+
+.journey-node.work {
+  border-left: 5px solid var(--amber);
+}
+
+.journey-node.decision {
+  border-left: 5px solid var(--rose);
+}
+
+.journey-node.evidence {
+  border-left: 5px solid var(--green);
+}
+
+.journey-link {
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, var(--line), var(--accent));
+}
+
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.instruction-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 16px 18px 18px 34px;
+}
+
+.instruction-list li {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.38;
+  padding-left: 4px;
 }
 
 .flow-rail {
@@ -1320,6 +1439,8 @@ pre {
   .records-grid,
   .users-grid,
   .auth-grid,
+  .onboarding-hero,
+  .onboarding-grid,
   .github-grid,
   .module-detail-grid {
     grid-template-columns: 1fr;
@@ -1375,8 +1496,16 @@ pre {
   .template-grid,
   .type-grid,
   .auth-grid,
-  .users-grid {
+  .users-grid,
+  .workflow-map {
     grid-template-columns: 1fr;
+  }
+
+  .journey-link {
+    width: 2px;
+    height: 20px;
+    margin-left: 24px;
+    background: linear-gradient(180deg, var(--line), var(--accent));
   }
 
   .workspace {

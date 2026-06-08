@@ -145,18 +145,24 @@ class LocalReadAPI:
         if path == "/skills":
             return self._skills()
         if path == "/modules":
-            return self._modules()
+            return self._modules(user)
         if path == "/objects":
-            return self._objects(query)
+            return self._objects(query, user)
         if path == "/object":
-            return self._object(query)
+            return self._object(query, user)
         if path == "/proposals":
-            return self._proposals()
+            return self._proposals(user)
         if path == "/audit/events":
-            return self._audit_events()
+            return self._audit_events(user)
         if path == "/github/previews/prs":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
             return self._preview_files(DEFAULT_GITHUB_PR_PREVIEW_DIR, "pull_requests")
         if path == "/github/previews/issues":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
             return self._preview_files(DEFAULT_GITHUB_ISSUE_PREVIEW_DIR, "issues")
         if path == "/crm/summary":
             return self._crm_summary(user)
@@ -175,7 +181,7 @@ class LocalReadAPI:
         user: User,
     ) -> APIResponse:
         if path == "/objects/validate":
-            return self._validate_object_payload(body)
+            return self._validate_object_payload(body, user)
         if path == "/objects/policy-check":
             return self._policy_check(body=body, user=user)
         if path == "/objects/governed-write":
@@ -185,6 +191,9 @@ class LocalReadAPI:
         if path == "/proposals":
             return self._create_proposal(body=body, user=user)
         if path == "/github/issues":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
             return self._create_issue_preview(body)
 
         parts = tuple(part for part in path.strip("/").split("/") if part)
@@ -197,10 +206,19 @@ class LocalReadAPI:
             if operation == "apply":
                 return self._apply_proposal(proposal_id, user=user)
             if operation == "publish-pr":
+                authorization = self._authorize_admin_surface(user)
+                if authorization is not None:
+                    return authorization
                 return self._publish_pr_preview(proposal_id, body=body)
             if operation == "validate-pr":
+                authorization = self._authorize_admin_surface(user)
+                if authorization is not None:
+                    return authorization
                 return self._validate_proposal_pr(proposal_id)
         if len(parts) == 3 and parts[0] == "github" and parts[1] == "issues":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
             return self._update_issue_preview(issue_number=int(parts[2]), body=body)
 
         return APIResponse(status_code=404, body={"error": f"Unknown API route: {path}"})
@@ -318,15 +336,30 @@ class LocalReadAPI:
             },
         )
 
-    def _objects(self, query: Mapping[str, str]) -> APIResponse:
+    def _objects(self, query: Mapping[str, str], user: User) -> APIResponse:
         requested_type = query.get("object_type", "")
         requested_module = query.get("module", "")
+        candidate_types = [
+            object_type
+            for object_type in _demo_path_map()
+            if (not requested_type or object_type == requested_type)
+            and (not requested_module or _module_id_for_object_type(object_type) == requested_module)
+        ]
+        authorized_types = [
+            object_type for object_type in candidate_types if self._can_read_type(user, object_type)
+        ]
+        if (requested_type or requested_module) and not authorized_types:
+            return APIResponse(
+                status_code=403,
+                body={
+                    "error": "Read request denied by policy.",
+                    "module": requested_module,
+                    "object_type": requested_type,
+                },
+            )
         rows = []
-        for object_type, directory in _demo_path_map().items():
-            if requested_type and object_type != requested_type:
-                continue
-            if requested_module and _module_id_for_object_type(object_type) != requested_module:
-                continue
+        for object_type in authorized_types:
+            directory = _demo_path_map()[object_type]
             root = self._repo_root / directory
             if not root.exists():
                 continue
@@ -335,10 +368,12 @@ class LocalReadAPI:
                 rows.append(self._object_row(path=path, data=data))
         return APIResponse(status_code=200, body={"objects": rows})
 
-    def _modules(self) -> APIResponse:
+    def _modules(self, user: User) -> APIResponse:
         rows = []
         objects = []
         for object_type, directory in _demo_path_map().items():
+            if not self._can_read_type(user, object_type):
+                continue
             root = self._repo_root / directory
             if not root.exists():
                 continue
@@ -347,7 +382,13 @@ class LocalReadAPI:
                 objects.append(self._object_row(path=path, data=data))
 
         for module in MODULES:
-            module_types = tuple(str(object_type) for object_type in module["object_types"])
+            module_types = tuple(
+                str(object_type)
+                for object_type in module["object_types"]
+                if self._can_read_type(user, str(object_type))
+            )
+            if not module_types:
+                continue
             module_objects = [
                 item
                 for item in objects
@@ -374,9 +415,12 @@ class LocalReadAPI:
             )
         return APIResponse(status_code=200, body={"modules": rows})
 
-    def _object(self, query: Mapping[str, str]) -> APIResponse:
+    def _object(self, query: Mapping[str, str], user: User) -> APIResponse:
         path = self._safe_repo_path(query.get("path", ""))
         data = _read_mapping(path)
+        authorization = self._authorize_reads(user, (str(data.get("object_type", "")),))
+        if authorization is not None:
+            return authorization
         return APIResponse(
             status_code=200,
             body={
@@ -386,9 +430,12 @@ class LocalReadAPI:
             },
         )
 
-    def _validate_object_payload(self, body: Mapping[str, Any]) -> APIResponse:
+    def _validate_object_payload(self, body: Mapping[str, Any], user: User) -> APIResponse:
         data, path = self._object_data_from_body(body)
         object_type = str(data.get("object_type", ""))
+        authorization = self._authorize_reads(user, (object_type,))
+        if authorization is not None:
+            return authorization
         result = validate_object(data, _schema_for_object_type(object_type))
         return APIResponse(
             status_code=200,
@@ -570,10 +617,12 @@ class LocalReadAPI:
             },
         )
 
-    def _proposals(self) -> APIResponse:
+    def _proposals(self, user: User) -> APIResponse:
         proposals = []
         for path in sorted(self._proposal_dir().glob("*.yaml"), reverse=True):
             proposal = self._proposal_service().read_proposal(path)
+            if not self._can_read_type(user, proposal.object_type):
+                continue
             proposals.append(self._proposal_payload(path=path, proposal=proposal))
         return APIResponse(status_code=200, body={"proposals": proposals})
 
@@ -709,15 +758,18 @@ class LocalReadAPI:
             },
         )
 
-    def _audit_events(self) -> APIResponse:
+    def _audit_events(self, user: User) -> APIResponse:
         events = []
         root = self._event_dir()
         if root.exists():
             for path in sorted(root.glob("*.yaml"), reverse=True):
+                event = _read_mapping(path)
+                if not self._can_read_type(user, str(event.get("object_type", ""))):
+                    continue
                 events.append(
                     {
                         "path": self._display_path(path),
-                        "event": _read_mapping(path),
+                        "event": event,
                     }
                 )
         return APIResponse(status_code=200, body={"events": events})
@@ -802,6 +854,25 @@ class LocalReadAPI:
                     },
                 )
         return None
+
+    def _authorize_admin_surface(self, user: User) -> Optional[APIResponse]:
+        if self._can_read_type(user, "*"):
+            return None
+        return APIResponse(status_code=403, body={"error": "Admin surface requires owner or admin access."})
+
+    def _can_read_type(self, user: User, object_type: str) -> bool:
+        if not object_type:
+            return False
+        result = self._policy_engine.evaluate(
+            user=user,
+            action=PermissionAction.READ,
+            obj={
+                "id": f"{object_type}_read_model",
+                "object_type": object_type,
+                "owner": "",
+            },
+        )
+        return result.decision == PolicyDecision.ALLOW
 
     def _object_data_from_body(
         self,

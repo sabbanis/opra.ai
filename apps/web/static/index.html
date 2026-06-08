@@ -24,6 +24,7 @@
 
     <nav class="tabbar" aria-label="Workspace views">
       <button class="active" type="button" data-view="modules">Home</button>
+      <button type="button" data-view="onboarding">Onboarding</button>
       <button type="button" data-view="crm">Customers</button>
       <button type="button" data-view="issues">Delivery</button>
       <button type="button" data-view="hr">People</button>
@@ -38,6 +39,26 @@
     <main class="workspace">
       <section class="view active" id="authView">
         <section class="auth-grid">
+          <section class="panel auth-showcase">
+            <div class="panel-heading">
+              <div>
+                <h2>Start With Identity</h2>
+                <p>Sign in, enter your workspace, capture work, approve changes, and keep evidence.</p>
+              </div>
+            </div>
+            <div class="workflow-map auth-map" aria-label="Company OS workflow">
+              <span class="journey-node identity"><strong>Identity</strong><small>UID and passcode</small></span>
+              <span class="journey-link"></span>
+              <span class="journey-node scope"><strong>Persona</strong><small>Allowed modules</small></span>
+              <span class="journey-link"></span>
+              <span class="journey-node work"><strong>Workbench</strong><small>Create or update</small></span>
+              <span class="journey-link"></span>
+              <span class="journey-node decision"><strong>Approval</strong><small>Policy decision</small></span>
+              <span class="journey-link"></span>
+              <span class="journey-node evidence"><strong>Evidence</strong><small>Audit trail</small></span>
+            </div>
+          </section>
+
           <section class="panel">
             <div class="panel-heading">
               <div>
@@ -96,6 +117,59 @@
             <div class="button-row">
               <button id="registerButton" type="button">Register</button>
             </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="onboardingView">
+        <section class="onboarding-hero">
+          <div>
+            <span class="eyebrow">Guided Onboarding</span>
+            <h2 id="onboardingTitle">Company OS Onboarding</h2>
+            <p id="onboardingSummary">Loading persona guide</p>
+          </div>
+          <div class="workflow-map" id="personaWorkflow" aria-label="Persona workflow"></div>
+        </section>
+
+        <section class="onboarding-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Your Job In Company OS</h2>
+                <p id="onboardingMission">Loading mission</p>
+              </div>
+            </div>
+            <ol class="instruction-list" id="firstStepsList"></ol>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Daily Operating Flow</h2>
+                <p id="dailyFlowSummary">Loading workflow</p>
+              </div>
+            </div>
+            <ol class="instruction-list" id="dailyFlowList"></ol>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Boundaries</h2>
+                <p id="boundarySummary">Loading access rules</p>
+              </div>
+            </div>
+            <ul class="instruction-list" id="boundaryList"></ul>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Good First Session</h2>
+                <p id="successSummary">Loading finish line</p>
+              </div>
+            </div>
+            <ul class="instruction-list" id="successList"></ul>
           </section>
         </section>
       </section>

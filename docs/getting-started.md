@@ -82,10 +82,23 @@ Open:
 http://127.0.0.1:8080/
 ```
 
+Sign in with a seeded demo user:
+
+- `owner` for full access.
+- `admin` for Company OS Admin access.
+- `customer_operator` for Customers-only operator access.
+- `support_engineer` for Delivery support access.
+- `hiring_manager` for People hiring access.
+
+Use passcode `demo` for seeded users.
+
 Stop the API server with `Ctrl+C`.
 
 ## Next Steps
 
+- [Persona Onboarding](persona-onboarding.md)
+- [End-to-End Architecture](end-to-end-architecture.md)
+- [Threat and Vulnerability Assessment](threat-and-vulnerability-assessment.md)
 - [First CRM Demo](first-crm-demo.md)
 - [Governed Proposal Workflow](governed-proposal-workflow.md)
 - [GitHub Integration](github-integration.md)

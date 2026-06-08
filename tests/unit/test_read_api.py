@@ -205,6 +205,38 @@ class LocalReadAPITests(unittest.TestCase):
             self.assertEqual(modules["issues"]["type_counts"]["defect"], 1)
             self.assertEqual(modules["hr"]["type_counts"]["employee"], 1)
 
+    def test_generic_reads_are_filtered_by_policy(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_seed(root)
+            write_yaml(
+                root / "modules/issues/objects/defects/defect_demo.yaml",
+                self._base_record("defect_demo", "defect"),
+            )
+            write_yaml(
+                root / "modules/hr/objects/employees/emp_demo.yaml",
+                self._base_record("emp_demo", "employee", visibility="hr_private"),
+            )
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+            user = User(id="ssabbani", username="ssabbani", roles=("sales_rep",))
+
+            modules = api.handle_get(path="/modules", query={}, user=user)
+            self.assertEqual(modules.status_code, 200)
+            self.assertEqual([module["id"] for module in modules.body["modules"]], ["crm"])
+
+            denied_module = api.handle_get(path="/objects", query={"module": "hr"}, user=user)
+            self.assertEqual(denied_module.status_code, 403)
+
+            denied_object = api.handle_get(
+                path="/object",
+                query={"path": "modules/hr/objects/employees/emp_demo.yaml"},
+                user=user,
+            )
+            self.assertEqual(denied_object.status_code, 403)
+
+            denied_preview = api.handle_get(path="/github/previews/prs", query={}, user=user)
+            self.assertEqual(denied_preview.status_code, 403)
+
     def test_proposal_lifecycle_can_be_driven_through_api(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

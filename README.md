@@ -76,6 +76,9 @@ Seeded demo users are in `platform/identity/users.json`. Use UID `owner` with pa
 Start here:
 
 - [Getting Started](docs/getting-started.md)
+- [Persona Onboarding](docs/persona-onboarding.md)
+- [End-to-End Architecture](docs/end-to-end-architecture.md)
+- [Threat and Vulnerability Assessment](docs/threat-and-vulnerability-assessment.md)
 - [Onboarding Checklist](docs/onboarding-checklist.md)
 - [Local Development Setup](docs/local-development.md)
 - [First CRM Demo](docs/first-crm-demo.md)

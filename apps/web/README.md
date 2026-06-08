@@ -7,6 +7,7 @@ The browser workspace is served by the local API server at `http://127.0.0.1:808
 Current surface:
 
 - Local Company OS sign-in, self-registration for operator personas, and owner/admin user management
+- Persona-specific Onboarding tab with workflow map, first-session steps, daily flow, boundaries, and success checks
 - Company OS home dashboard with KPIs, attention signals, approval queue, recent activity, and quick actions
 - Customers dashboard with accounts, opportunities, renewal health, and local Skill results
 - Delivery workspace for defects, incidents, feature requests, components, releases, and RCAs
