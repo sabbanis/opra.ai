@@ -17,11 +17,14 @@
       </div>
       <div class="header-actions">
         <label class="field compact">
-          <span>Role</span>
+          <span>Persona</span>
           <select id="identitySelect">
-            <option value="founder">Founder</option>
-            <option value="sales_rep">Sales Rep</option>
-            <option value="sales_manager">Sales Manager</option>
+            <option value="owner">Owner</option>
+            <option value="company_os_admin">Company OS Admin</option>
+            <option value="crm_manager">CRM Manager</option>
+            <option value="crm_rep">CRM Rep</option>
+            <option value="delivery_lead">Delivery Lead</option>
+            <option value="people_lead">People Lead</option>
           </select>
         </label>
         <button id="refreshButton" type="button">Refresh</button>
@@ -38,6 +41,7 @@
       <button type="button" data-view="github">Publishing</button>
       <button type="button" data-view="audit">Activity</button>
     </nav>
+    <div class="persona-strip" id="personaStrip"></div>
 
     <main class="workspace">
       <section class="view active" id="modulesView">
@@ -212,7 +216,11 @@
               <button type="button" data-skill="renewal-health">Renewals</button>
               <button type="button" data-skill="opportunity-view">Open Deals</button>
             </div>
-            <pre id="skillOutput">{}</pre>
+            <div class="skill-report" id="skillReport"></div>
+            <details class="source-details">
+              <summary>Report source</summary>
+              <pre id="skillOutput">{}</pre>
+            </details>
           </section>
 
           <section class="panel wide">

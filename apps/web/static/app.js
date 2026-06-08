@@ -1,15 +1,63 @@
-const IDENTITIES = {
-  founder: {
+const PERSONAS = {
+  owner: {
+    label: "Owner",
     username: "ssabbani",
     roles: ["founder"],
+    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit"],
+    modules: ["crm", "issues", "hr"],
+    templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
+    landingView: "modules",
+    summary: "Full Company OS access",
   },
-  sales_rep: {
+  company_os_admin: {
+    label: "Company OS Admin",
     username: "ssabbani",
-    roles: ["sales_rep"],
+    roles: ["company_os_admin"],
+    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit"],
+    modules: ["crm", "issues", "hr"],
+    templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
+    landingView: "modules",
+    summary: "System operations, approvals, publishing, and evidence",
   },
-  sales_manager: {
+  crm_manager: {
+    label: "CRM Manager",
     username: "ssabbani",
-    roles: ["sales_manager"],
+    roles: ["crm_manager", "sales_manager"],
+    views: ["crm", "records", "proposals", "audit"],
+    modules: ["crm"],
+    templates: ["crm_account", "crm_opportunity"],
+    landingView: "crm",
+    summary: "Customer pipeline, renewals, approvals, and CRM work items",
+  },
+  crm_rep: {
+    label: "CRM Rep",
+    username: "ssabbani",
+    roles: ["crm_rep", "sales_rep"],
+    views: ["crm", "records", "proposals", "audit"],
+    modules: ["crm"],
+    templates: ["crm_opportunity"],
+    landingView: "crm",
+    summary: "Customer accounts, open deals, and CRM work changes",
+  },
+  delivery_lead: {
+    label: "Delivery Lead",
+    username: "ssabbani",
+    roles: ["delivery_lead"],
+    views: ["issues", "records", "proposals", "audit"],
+    modules: ["issues"],
+    templates: ["issue_defect", "issue_incident", "issue_release"],
+    landingView: "issues",
+    summary: "Delivery work, incidents, releases, and evidence",
+  },
+  people_lead: {
+    label: "People Lead",
+    username: "ssabbani",
+    roles: ["people_lead"],
+    views: ["hr", "records", "proposals", "audit"],
+    modules: ["hr"],
+    templates: ["hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
+    landingView: "hr",
+    summary: "Hiring, onboarding, employee changes, and people requests",
   },
 };
 
@@ -310,8 +358,12 @@ function byId(id) {
   return document.getElementById(id);
 }
 
+function currentPersona() {
+  return PERSONAS[byId("identitySelect").value] || PERSONAS.owner;
+}
+
 function currentIdentity() {
-  return IDENTITIES[byId("identitySelect").value] || IDENTITIES.founder;
+  return currentPersona();
 }
 
 function authHeaders() {
@@ -320,6 +372,61 @@ function authHeaders() {
     "X-Opra-User": identity.username,
     "X-Opra-Roles": identity.roles.join(","),
   };
+}
+
+function applyPersonaShell() {
+  const persona = currentPersona();
+  ensurePersonaScope();
+  byId("personaStrip").innerHTML = `
+    <span>${escapeHtml(persona.label)}</span>
+    <strong>${escapeHtml(persona.summary)}</strong>
+  `;
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.hidden = !persona.views.includes(button.dataset.view);
+  });
+  if (!persona.views.includes(activeViewName())) {
+    activateView(persona.landingView);
+  }
+}
+
+function ensurePersonaScope() {
+  const persona = currentPersona();
+  if (!persona.modules.includes(state.activeModule)) {
+    state.activeModule = persona.modules[0] || "crm";
+  }
+  if (state.recordModuleFilter && !persona.modules.includes(state.recordModuleFilter)) {
+    state.recordModuleFilter = persona.modules.length === 1 ? persona.modules[0] : "";
+  }
+  if (!state.recordModuleFilter && persona.modules.length === 1) {
+    state.recordModuleFilter = persona.modules[0];
+  }
+}
+
+function activeViewName() {
+  const active = document.querySelector(".view.active");
+  return active ? active.id.replace(/View$/, "") : "modules";
+}
+
+function visibleModules() {
+  const allowed = currentPersona().modules;
+  return state.modules.filter((module) => allowed.includes(module.id));
+}
+
+function visibleModuleIds() {
+  return currentPersona().modules;
+}
+
+function visibleTemplateIds(moduleId) {
+  const personaTemplates = currentPersona().templates;
+  return moduleMeta(moduleId).templateIds.filter((templateId) => personaTemplates.includes(templateId));
+}
+
+function personaAllowsModule(moduleId) {
+  return visibleModuleIds().includes(moduleId);
+}
+
+function personaAllowsTemplate(templateId) {
+  return currentPersona().templates.includes(templateId);
 }
 
 async function fetchJson(path, options = {}) {
@@ -346,10 +453,11 @@ function setStatus(message) {
 }
 
 async function loadWorkspace() {
+  applyPersonaShell();
   setStatus("Loading workspace");
   const results = await Promise.allSettled([
     loadModules(),
-    loadDashboard(),
+    personaAllowsModule("crm") ? loadDashboard() : resetCustomerState(),
     loadObjects(),
     loadProposals(),
     loadPreviews(),
@@ -360,8 +468,17 @@ async function loadWorkspace() {
     setStatus(rejected.reason.message);
     return;
   }
+  applyPersonaShell();
   renderFlowState();
   setStatus("Workspace loaded");
+}
+
+async function resetCustomerState() {
+  state.accounts = [];
+  state.opportunities = [];
+  state.crmSummary = null;
+  state.dashboardGeneratedAt = "";
+  state.skills = {};
 }
 
 async function loadModules() {
@@ -397,6 +514,7 @@ async function loadDashboard() {
 }
 
 async function loadObjects() {
+  ensurePersonaScope();
   const filter = byId("objectTypeFilter").value;
   let query = "";
   if (filter) {
@@ -435,12 +553,14 @@ async function loadAuditEvents() {
 }
 
 function renderModules() {
-  const totalRecords = state.modules.reduce((total, module) => total + module.record_count, 0);
+  ensurePersonaScope();
+  const modules = visibleModules();
+  const totalRecords = modules.reduce((total, module) => total + module.record_count, 0);
   const approvalCount = openApprovalRequests().length;
   byId("moduleCommandSummary").textContent =
-    `${state.modules.length} operating areas, ${totalRecords} work items, ${approvalCount} approvals waiting`;
+    `${modules.length} operating areas, ${totalRecords} work items, ${approvalCount} approvals waiting`;
 
-  byId("moduleTiles").innerHTML = state.modules.map((module) => {
+  byId("moduleTiles").innerHTML = modules.map((module) => {
     const meta = moduleMeta(module.id);
     const topTypes = topTypeCounts(module).slice(0, 3);
     return `
@@ -499,8 +619,12 @@ function renderModuleFocus() {
 }
 
 function renderModuleDashboards() {
-  renderOperationalModule("issues");
-  renderOperationalModule("hr");
+  if (personaAllowsModule("issues")) {
+    renderOperationalModule("issues");
+  }
+  if (personaAllowsModule("hr")) {
+    renderOperationalModule("hr");
+  }
 }
 
 function renderOperationalModule(moduleId) {
@@ -526,8 +650,8 @@ function renderTemplates() {
     byId("starterSummary").textContent = `${moduleMeta(active.id).name} forms`;
     byId("starterTemplates").innerHTML = templateButtons(active.id);
   }
-  byId("issuesTemplates").innerHTML = templateButtons("issues");
-  byId("hrTemplates").innerHTML = templateButtons("hr");
+  byId("issuesTemplates").innerHTML = personaAllowsModule("issues") ? templateButtons("issues") : "";
+  byId("hrTemplates").innerHTML = personaAllowsModule("hr") ? templateButtons("hr") : "";
 }
 
 function renderFlowState() {
@@ -557,7 +681,7 @@ function renderCompanyDashboard() {
     return;
   }
 
-  const totalRecords = state.modules.reduce((total, module) => total + module.record_count, 0);
+  const totalRecords = visibleModules().reduce((total, module) => total + module.record_count, 0);
   homeKpis.innerHTML = dashboardKpis(totalRecords).map((item) => `
     <button class="home-kpi ${escapeHtml(item.tone)}" type="button" data-flow-view="${escapeHtml(item.view)}">
       <span>${escapeHtml(item.label)}</span>
@@ -600,6 +724,7 @@ function dashboardKpis(totalRecords) {
   const atRiskCount = summary.at_risk_account_count ?? atRiskAccounts().length;
   const deliveryCount = activeDeliveryItems().length;
   const peopleCount = activePeopleItems().length;
+  const views = currentPersona().views;
   return [
     {
       label: "Revenue",
@@ -643,21 +768,21 @@ function dashboardKpis(totalRecords) {
       tone: "neutral",
       view: "audit",
     },
-  ];
+  ].filter((item) => views.includes(item.view));
 }
 
 function attentionItems() {
   return [
-    ...atRiskAccounts().map((account) => ({
+    ...(personaAllowsModule("crm") ? atRiskAccounts().map((account) => ({
       tone: account.health === "red" ? "red" : "amber",
       category: "Customer follow-up",
       title: account.name || account.id,
       detail: `${label(account.health)} health / renewal ${account.renewal_date}`,
       view: "crm",
-    })),
-    ...openPipelineItems().slice(0, 2),
-    ...activeDeliveryItems().slice(0, 3),
-    ...activePeopleItems().slice(0, 3),
+    })) : []),
+    ...(personaAllowsModule("crm") ? openPipelineItems().slice(0, 2) : []),
+    ...(personaAllowsModule("issues") ? activeDeliveryItems().slice(0, 3) : []),
+    ...(personaAllowsModule("hr") ? activePeopleItems().slice(0, 3) : []),
   ];
 }
 
@@ -744,6 +869,10 @@ function recordDetail(record) {
 function openApprovalRequests() {
   return state.proposals.filter((item) => {
     const proposal = item.proposal || {};
+    const moduleId = moduleForObjectType(proposal.object_type);
+    if (moduleId && !personaAllowsModule(moduleId)) {
+      return false;
+    }
     return ["proposed", "requires_approval"].includes(proposal.status) ||
       (item.remaining_approvers || []).length > 0;
   });
@@ -1148,8 +1277,8 @@ function renderObjectTypeFilter() {
   const select = byId("objectTypeFilter");
   const current = select.value;
   const options = [`<option value="">All work items</option>`];
-  state.modules.forEach((module) => {
-    options.push(`<optgroup label="${escapeHtml(module.name)}">`);
+  visibleModules().forEach((module) => {
+    options.push(`<optgroup label="${escapeHtml(moduleMeta(module.id).name)}">`);
     module.object_types.forEach((objectType) => {
       options.push(`<option value="${escapeHtml(objectType)}">${escapeHtml(label(objectType))}</option>`);
     });
@@ -1187,10 +1316,7 @@ function renderAccounts() {
 }
 
 function renderOpportunities() {
-  const openRows = state.opportunities.filter(
-    (opportunity) =>
-      !["closed_won", "closed_lost", "renewed", "churned"].includes(opportunity.stage),
-  );
+  const openRows = openOpportunityRows();
   byId("opportunityCount").textContent = `${openRows.length} open deals`;
   const rows = openRows.map((opportunity) => `
     <tr>
@@ -1208,13 +1334,142 @@ function renderOpportunities() {
   byId("opportunitiesTable").innerHTML = rows.join("") || emptyRow(6, "No open opportunities");
 }
 
+function openOpportunityRows() {
+  return state.opportunities.filter(
+    (opportunity) =>
+      !["closed_won", "closed_lost", "renewed", "churned"].includes(opportunity.stage),
+  );
+}
+
 function renderSkill() {
   const result = state.skills[state.activeSkill];
   if (!result) {
     return;
   }
   byId("skillSummary").textContent = result.summary;
+  byId("skillReport").innerHTML = renderCrmSkillReport(result);
   byId("skillOutput").textContent = pretty(result.data);
+}
+
+function renderCrmSkillReport(result) {
+  const data = result.data || {};
+  if (state.activeSkill === "pipeline-summary") {
+    return renderPipelineReport(data);
+  }
+  if (state.activeSkill === "renewal-health") {
+    return renderRenewalReport(data);
+  }
+  if (state.activeSkill === "opportunity-view") {
+    return renderOpenDealsReport(data);
+  }
+  return renderGenericReport(data);
+}
+
+function renderPipelineReport(data) {
+  const summary = data.summary || state.crmSummary || {};
+  const opportunities = data.top_opportunities || data.opportunities || state.opportunities;
+  const facts = [
+    ["Customers", summary.account_count ?? state.accounts.length],
+    ["Open deals", summary.opportunity_count ?? openOpportunityRows().length],
+    ["Open pipeline", money.format(summary.open_pipeline_amount || 0)],
+    ["Weighted", money.format(summary.weighted_pipeline_amount || 0)],
+    ["At risk", summary.at_risk_account_count ?? atRiskAccounts().length],
+  ];
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, value)).join("")}</div>
+      ${opportunityReportTable("Top Open Deals", opportunities)}
+    </div>
+  `;
+}
+
+function renderRenewalReport(data) {
+  const accounts = data.accounts || data.at_risk_accounts || atRiskAccounts();
+  const facts = [
+    ["Accounts needing attention", accounts.length],
+    ["Total customers", state.accounts.length],
+    ["Booked ARR", money.format((state.crmSummary || {}).total_arr || 0)],
+  ];
+  const rows = accounts.map((account) => `
+    <tr>
+      <td><strong>${escapeHtml(account.name || account.id)}</strong><span>${escapeHtml(account.id || "")}</span></td>
+      <td><span class="pill ${escapeHtml(account.health || "")}">${escapeHtml(label(account.health || "unknown"))}</span></td>
+      <td>${escapeHtml(account.renewal_date || "none")}</td>
+      <td>${money.format(account.open_pipeline_amount || 0)}</td>
+    </tr>
+  `).join("") || emptyRow(4, "No renewal risk");
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, value)).join("")}</div>
+      <section class="report-section">
+        <h3>Renewal Attention</h3>
+        <div class="table-wrap">
+          <table class="change-table">
+            <thead>
+              <tr><th>Customer</th><th>Health</th><th>Renewal</th><th>Pipeline</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderOpenDealsReport(data) {
+  const opportunities = data.opportunities || data.open_opportunities || openOpportunityRows();
+  const total = opportunities.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const weighted = opportunities.reduce((sum, item) => sum + Number(item.weighted_amount || 0), 0);
+  const facts = [
+    ["Open deals", opportunities.length],
+    ["Pipeline", money.format(total)],
+    ["Weighted", money.format(weighted)],
+  ];
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, value)).join("")}</div>
+      ${opportunityReportTable("Open Deals", opportunities)}
+    </div>
+  `;
+}
+
+function opportunityReportTable(title, opportunities) {
+  const rows = opportunities.map((opportunity) => `
+    <tr>
+      <td><strong>${escapeHtml(opportunity.account_name || opportunity.account_id || opportunity.id)}</strong><span>${escapeHtml(opportunity.id || "")}</span></td>
+      <td><span class="pill">${escapeHtml(label(opportunity.stage || ""))}</span></td>
+      <td>${money.format(opportunity.amount || 0)}</td>
+      <td>${money.format(opportunity.weighted_amount || 0)}</td>
+      <td>${escapeHtml(opportunity.close_date || "")}</td>
+    </tr>
+  `).join("") || emptyRow(5, "No open deals");
+  return `
+    <section class="report-section">
+      <h3>${escapeHtml(title)}</h3>
+      <div class="table-wrap">
+        <table class="change-table">
+          <thead>
+            <tr><th>Deal</th><th>Stage</th><th>Amount</th><th>Weighted</th><th>Close</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderGenericReport(data) {
+  if (!data || !Object.keys(data).length) {
+    return emptyReport("No report data", "Report returned no rows.");
+  }
+  const facts = Object.entries(data)
+    .filter(([, value]) => typeof value !== "object")
+    .slice(0, 6);
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(label(name), value)).join("")}</div>
+    </div>
+  `;
 }
 
 function renderObjects() {
@@ -1259,8 +1514,9 @@ async function selectObject(path) {
 }
 
 function renderProposals() {
-  byId("proposalCount").textContent = `${state.proposals.length} requests`;
-  const rows = state.proposals.map((item) => {
+  const proposals = visibleProposals();
+  byId("proposalCount").textContent = `${proposals.length} requests`;
+  const rows = proposals.map((item) => {
     const proposal = item.proposal;
     return `
       <button class="list-row ${selectedClass(state.selectedProposal, item.path)}" type="button" data-proposal-path="${escapeHtml(item.path)}">
@@ -1273,8 +1529,11 @@ function renderProposals() {
     `;
   });
   byId("proposalList").innerHTML = rows.join("") || `<p class="empty">No approval requests yet</p>`;
-  if (!state.selectedProposal && state.proposals.length) {
-    selectProposal(state.proposals[0].path);
+  if (state.selectedProposal && !proposals.some((item) => item.path === state.selectedProposal.path)) {
+    state.selectedProposal = null;
+  }
+  if (!state.selectedProposal && proposals.length) {
+    selectProposal(proposals[0].path);
   } else {
     renderSelectedProposal();
   }
@@ -1282,9 +1541,16 @@ function renderProposals() {
 }
 
 function selectProposal(path) {
-  state.selectedProposal = state.proposals.find((item) => item.path === path) || null;
+  state.selectedProposal = visibleProposals().find((item) => item.path === path) || null;
   renderProposals();
   renderSelectedProposal();
+}
+
+function visibleProposals() {
+  return state.proposals.filter((item) => {
+    const moduleId = moduleForObjectType(item.proposal?.object_type);
+    return !moduleId || personaAllowsModule(moduleId);
+  });
 }
 
 function renderSelectedProposal() {
@@ -1580,6 +1846,9 @@ function useTemplate(templateId) {
   if (!template) {
     throw new Error(`Unknown template: ${templateId}`);
   }
+  if (!personaAllowsTemplate(templateId)) {
+    throw new Error(`${currentPersona().label} cannot start that work item`);
+  }
   const object = withUniqueId(template.build());
   state.activeModule = template.module;
   state.recordModuleFilter = template.module;
@@ -1625,6 +1894,10 @@ async function reloadSelectedObject() {
 }
 
 function openRecordsForModule(moduleId) {
+  if (!personaAllowsModule(moduleId)) {
+    setStatus(`${currentPersona().label} cannot open that module`);
+    return;
+  }
   state.activeModule = moduleId;
   state.recordModuleFilter = moduleId;
   state.selectedObject = null;
@@ -1635,6 +1908,10 @@ function openRecordsForModule(moduleId) {
 }
 
 function openModule(moduleId) {
+  if (!personaAllowsModule(moduleId)) {
+    setStatus(`${currentPersona().label} cannot open that module`);
+    return;
+  }
   state.activeModule = moduleId;
   activateView(moduleMeta(moduleId).view);
   renderModules();
@@ -1714,7 +1991,7 @@ function activateView(name) {
 }
 
 function activeModule() {
-  return moduleById(state.activeModule) || state.modules[0] || null;
+  return moduleById(state.activeModule) || visibleModules()[0] || state.modules[0] || null;
 }
 
 function moduleById(moduleId) {
@@ -1752,7 +2029,7 @@ function barHeight(count, total) {
 }
 
 function templateButtons(moduleId) {
-  return moduleMeta(moduleId).templateIds.map((templateId) => {
+  return visibleTemplateIds(moduleId).map((templateId) => {
     const template = TEMPLATE_DEFS[templateId];
     return `
       <button class="template-button" type="button" data-template="${escapeHtml(templateId)}">
@@ -2016,6 +2293,12 @@ byId("recordAction").addEventListener("change", () => {
 });
 
 byId("identitySelect").addEventListener("change", () => {
+  state.selectedObject = null;
+  state.selectedProposal = null;
+  state.selectedAuditEvent = null;
+  state.recordModuleFilter = "";
+  byId("objectTypeFilter").value = "";
+  applyPersonaShell();
   loadWorkspace().catch((error) => setStatus(error.message));
 });
 

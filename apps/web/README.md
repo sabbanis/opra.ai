@@ -12,3 +12,10 @@ Current surface:
 - People workspace for jobs, candidates, employees, onboarding, policy acknowledgments, and time off
 - Governed Workbench for create, read, update, delete, validation, policy checks, and approval requests
 - Approval review and commit workflow, publishing drafts, and activity evidence
+
+Personas:
+
+- Owner and Company OS Admin: full dashboard, all modules, approvals, publishing, and activity
+- CRM Manager and CRM Rep: Customers, CRM Workbench, CRM approvals, and CRM activity
+- Delivery Lead: Delivery work, Delivery Workbench, Delivery approvals, and Delivery activity
+- People Lead: People work, People Workbench, People approvals, and People activity

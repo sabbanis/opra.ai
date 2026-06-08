@@ -26,6 +26,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -196,6 +200,28 @@ textarea {
 
 .tabbar button {
   min-width: 96px;
+}
+
+.persona-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.persona-strip span {
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
+.persona-strip strong {
+  color: var(--muted);
+  font-weight: 650;
 }
 
 .workspace {
@@ -1101,6 +1127,7 @@ td span,
 }
 
 .result-report,
+.skill-report,
 .proposal-report,
 .activity-report {
   min-height: 220px;

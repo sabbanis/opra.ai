@@ -172,6 +172,11 @@ def _user_from_headers(headers) -> User:
 
 
 def _demo_policy_engine() -> PolicyEngine:
+    all_objects = ("*",)
+    crm_objects = ("account", "opportunity")
+    delivery_objects = ("component", "defect", "feature_request", "incident", "rca", "release")
+    people_objects = ("candidate", "employee", "interview", "job", "offer", "onboarding", "policy_ack", "time_off")
+
     sales_rep = Role(
         id="sales_rep",
         name="Sales Rep",
@@ -195,6 +200,19 @@ def _demo_policy_engine() -> PolicyEngine:
                 scope="owned_by_me",
                 fields=("status", "tags", "metadata"),
             ),
+        ),
+    )
+    crm_rep = Role(
+        id="crm_rep",
+        name="CRM Rep",
+        permissions=tuple(
+            Permission(
+                subject="crm_rep",
+                action=PermissionAction.ALL,
+                object_type=object_type,
+                scope="company",
+            )
+            for object_type in crm_objects
         ),
     )
     sales_manager = Role(
@@ -221,6 +239,58 @@ def _demo_policy_engine() -> PolicyEngine:
             ),
         ),
     )
+    crm_manager = Role(
+        id="crm_manager",
+        name="CRM Manager",
+        permissions=tuple(
+            Permission(
+                subject="crm_manager",
+                action=PermissionAction.ALL,
+                object_type=object_type,
+                scope="company",
+            )
+            for object_type in crm_objects
+        ),
+    )
+    company_os_admin = Role(
+        id="company_os_admin",
+        name="Company OS Admin",
+        permissions=tuple(
+            Permission(
+                subject="company_os_admin",
+                action=PermissionAction.ALL,
+                object_type=object_type,
+                scope="company",
+            )
+            for object_type in all_objects
+        ),
+    )
+    delivery_lead = Role(
+        id="delivery_lead",
+        name="Delivery Lead",
+        permissions=tuple(
+            Permission(
+                subject="delivery_lead",
+                action=PermissionAction.ALL,
+                object_type=object_type,
+                scope="company",
+            )
+            for object_type in delivery_objects
+        ),
+    )
+    people_lead = Role(
+        id="people_lead",
+        name="People Lead",
+        permissions=tuple(
+            Permission(
+                subject="people_lead",
+                action=PermissionAction.ALL,
+                object_type=object_type,
+                scope="company",
+            )
+            for object_type in people_objects
+        ),
+    )
     founder = Role(
         id="founder",
         name="Founder",
@@ -234,7 +304,18 @@ def _demo_policy_engine() -> PolicyEngine:
         ),
     )
     return PolicyEngine(
-        rbac=RBACEngine(roles=(founder, sales_rep, sales_manager)),
+        rbac=RBACEngine(
+            roles=(
+                founder,
+                company_os_admin,
+                crm_manager,
+                crm_rep,
+                sales_rep,
+                sales_manager,
+                delivery_lead,
+                people_lead,
+            )
+        ),
         approval_rules=(
             approval_required(
                 object_type="account",
