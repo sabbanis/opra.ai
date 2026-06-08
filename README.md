@@ -21,15 +21,15 @@ This repository is the free developer-preview edition. It is meant for local eva
 - Generate proposal check reports for Actions summaries.
 - Build local CRM dashboard read models.
 - Run local CRM Skills.
-- Use a browser workspace from a local API server for CRM, Issues, HR, CRUD records, proposals, GitHub previews, and audit evidence.
+- Use a local Company OS dashboard for customers, delivery, people, governed work changes, approvals, publishing drafts, and activity evidence.
 - Create and update mock GitHub Issue previews.
 - Publish real proposal PRs and GitHub Issues with `gh` when you choose to use live GitHub integration.
 
 ## Current Limits
 
 - The CLI module names are still `company_os_cli` and `company_os_core` during this developer preview.
-- CRM is the primary complete demo path.
-- Issue Management and HR scaffolds exist, but CRM has the strongest local workflow coverage.
+- Customers has the richest read model today.
+- Delivery and People support governed dashboard objects and Workbench changes while more read-model skills are added.
 - The browser workspace is local-first and intentionally dependency-free.
 - GitHub integration uses the local `git` and `gh` CLIs for live operations.
 
@@ -57,7 +57,7 @@ python3 -m company_os_cli index-crm
 python3 -m company_os_cli crm-skill --name pipeline-summary --user ssabbani --role sales_rep
 ```
 
-Run the local browser workspace:
+Run the local Company OS dashboard:
 
 ```bash
 python3 apps/api/server.py --repo-root . --port 8080

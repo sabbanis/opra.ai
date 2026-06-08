@@ -15,27 +15,30 @@ const IDENTITIES = {
 
 const MODULE_META = {
   crm: {
-    name: "CRM",
-    glyph: "CRM",
+    name: "Customers",
+    glyph: "CUS",
     view: "crm",
     color: "teal",
-    signal: ["Accounts", "Opportunities", "Renewals"],
+    signal: ["Accounts", "Pipeline", "Renewals"],
+    description: "Revenue, renewals, and customer health",
     templateIds: ["crm_account", "crm_opportunity"],
   },
   issues: {
-    name: "Issues",
-    glyph: "ISS",
+    name: "Delivery",
+    glyph: "DLV",
     view: "issues",
     color: "blue",
     signal: ["Defects", "Incidents", "Releases"],
+    description: "Product work, incidents, and release readiness",
     templateIds: ["issue_defect", "issue_incident", "issue_release"],
   },
   hr: {
-    name: "HR",
-    glyph: "HR",
+    name: "People",
+    glyph: "PPL",
     view: "hr",
     color: "rose",
     signal: ["Jobs", "Candidates", "Onboarding"],
+    description: "Hiring, onboarding, employee changes, and time off",
     templateIds: ["hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
   },
 };
@@ -114,7 +117,7 @@ const TEMPLATE_DEFS = {
         name: "Workspace release candidate",
         state: "candidate",
         target_date: "2026-07-01",
-        readiness: "Records, proposals, previews, audit",
+        readiness: "Workbench, approvals, publishing, activity",
       },
     }),
   },
@@ -187,6 +190,8 @@ const state = {
   modules: [],
   accounts: [],
   opportunities: [],
+  crmSummary: null,
+  dashboardGeneratedAt: "",
   skills: {},
   objects: [],
   selectedObject: null,
@@ -334,7 +339,9 @@ async function loadAuditEvents() {
 
 function renderModules() {
   const totalRecords = state.modules.reduce((total, module) => total + module.record_count, 0);
-  byId("moduleCommandSummary").textContent = `${state.modules.length} modules / ${totalRecords} records`;
+  const approvalCount = openApprovalRequests().length;
+  byId("moduleCommandSummary").textContent =
+    `${state.modules.length} operating areas, ${totalRecords} work items, ${approvalCount} approvals waiting`;
 
   byId("moduleTiles").innerHTML = state.modules.map((module) => {
     const meta = moduleMeta(module.id);
@@ -343,8 +350,8 @@ function renderModules() {
       <button class="module-tile ${meta.color} ${state.activeModule === module.id ? "active" : ""}" type="button" data-module="${escapeHtml(module.id)}">
         <span class="module-glyph">${escapeHtml(meta.glyph)}</span>
         <span class="module-copy">
-          <strong>${escapeHtml(module.name)}</strong>
-          <small>${escapeHtml(module.label)}</small>
+          <strong>${escapeHtml(meta.name)}</strong>
+          <small>${escapeHtml(meta.description || module.label)}</small>
         </span>
         <span class="module-count">${module.record_count}</span>
         <span class="mini-bars" aria-hidden="true">
@@ -358,6 +365,7 @@ function renderModules() {
   renderModuleDashboards();
   renderTemplates();
   renderFlowState();
+  renderCompanyDashboard();
 }
 
 function renderModuleFocus() {
@@ -376,19 +384,19 @@ function renderModuleFocus() {
     `;
   }).join("");
 
-  byId("activeModuleSummary").textContent = `${module.name} / ${module.record_count} records`;
+  byId("activeModuleSummary").textContent = `${meta.name} / ${module.record_count} work items`;
   byId("moduleFocus").innerHTML = `
     <div class="module-focus-top ${meta.color}">
       <span class="module-glyph">${escapeHtml(meta.glyph)}</span>
       <div>
-        <strong>${escapeHtml(module.name)}</strong>
+        <strong>${escapeHtml(meta.name)}</strong>
         <small>${escapeHtml(meta.signal.join(" / "))}</small>
       </div>
     </div>
     <div class="type-grid">${typeRows}</div>
     <div class="button-row flush">
-      <button type="button" data-open-module="${escapeHtml(module.id)}">Open ${escapeHtml(module.name)}</button>
-      <button class="primary" type="button" data-open-records="${escapeHtml(module.id)}">Records</button>
+      <button type="button" data-open-module="${escapeHtml(module.id)}">Open ${escapeHtml(meta.name)}</button>
+      <button class="primary" type="button" data-open-records="${escapeHtml(module.id)}">Workbench</button>
     </div>
   `;
 }
@@ -403,8 +411,8 @@ function renderOperationalModule(moduleId) {
   if (!module) {
     return;
   }
-  byId(`${moduleId}BannerSummary`).textContent = `${module.record_count} records / ${module.object_types.length} object types`;
-  byId(`${moduleId}RecordSummary`).textContent = `${module.record_count} records`;
+  byId(`${moduleId}BannerSummary`).textContent = `${module.record_count} work items / ${module.object_types.length} categories`;
+  byId(`${moduleId}RecordSummary`).textContent = `${module.record_count} items`;
   byId(`${moduleId}Metrics`).innerHTML = module.object_types.map((objectType) => `
     <article class="module-metric">
       <span>${escapeHtml(label(objectType))}</span>
@@ -412,13 +420,13 @@ function renderOperationalModule(moduleId) {
     </article>
   `).join("");
   byId(`${moduleId}RecordList`).innerHTML = module.records.map((record) => recordRow(record)).join("") ||
-    `<p class="empty">No records</p>`;
+    `<p class="empty">No work items yet</p>`;
 }
 
 function renderTemplates() {
   const active = activeModule();
   if (active) {
-    byId("starterSummary").textContent = `${active.name} templates`;
+    byId("starterSummary").textContent = `${moduleMeta(active.id).name} forms`;
     byId("starterTemplates").innerHTML = templateButtons(active.id);
   }
   byId("issuesTemplates").innerHTML = templateButtons("issues");
@@ -431,13 +439,13 @@ function renderFlowState() {
   const auditCount = state.auditEvents.length;
   const previewCount = state.prPreviews.length + state.issuePreviews.length;
   byId("liveFlowSummary").textContent = active
-    ? `${active.name} flow`
-    : "Repo state";
+    ? `${moduleMeta(active.id).name} flow`
+    : "Workspace state";
   byId("flowState").innerHTML = [
-    ["Records", active ? active.record_count : state.objects.length],
-    ["Proposals", proposalCount],
-    ["Previews", previewCount],
-    ["Audit", auditCount],
+    ["Workbench", active ? active.record_count : state.objects.length],
+    ["Approvals", proposalCount],
+    ["Publishing", previewCount],
+    ["Activity", auditCount],
   ].map(([labelText, value]) => `
     <button class="flow-state-item" type="button" data-flow-view="${flowView(labelText)}">
       <strong>${escapeHtml(String(value))}</strong>
@@ -446,10 +454,248 @@ function renderFlowState() {
   `).join("");
 }
 
+function renderCompanyDashboard() {
+  const homeKpis = byId("homeKpis");
+  if (!homeKpis) {
+    return;
+  }
+
+  const totalRecords = state.modules.reduce((total, module) => total + module.record_count, 0);
+  homeKpis.innerHTML = dashboardKpis(totalRecords).map((item) => `
+    <button class="home-kpi ${escapeHtml(item.tone)}" type="button" data-flow-view="${escapeHtml(item.view)}">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(item.value)}</strong>
+      <small>${escapeHtml(item.detail)}</small>
+    </button>
+  `).join("");
+
+  const priority = attentionItems().slice(0, 6);
+  byId("prioritySummary").textContent = priority.length
+    ? `${priority.length} signals need owner attention`
+    : "No active risk signals";
+  byId("priorityQueue").innerHTML = priority.map(queueItemRow).join("") ||
+    emptyQueue("No urgent work right now", "Open Customers, Delivery, or People to continue operating.", "modules");
+
+  const approvals = openApprovalRequests();
+  byId("approvalSummary").textContent = approvals.length
+    ? `${approvals.length} waiting for a decision`
+    : `${state.proposals.length} total requests`;
+  byId("approvalQueue").innerHTML = approvals.slice(0, 5).map((item) => {
+    const proposal = item.proposal;
+    return queueItemRow({
+      tone: proposal.status === "rejected" ? "red" : "amber",
+      category: "Approval",
+      title: `${label(proposal.action)} ${label(proposal.object_type)}`,
+      detail: `${proposal.object_id} / ${label(proposal.status)}`,
+      proposalPath: item.path,
+    });
+  }).join("") || emptyQueue("No approvals waiting", "Create a change request from the Workbench.", "records");
+
+  byId("activitySummary").textContent = state.auditEvents.length
+    ? `${state.auditEvents.length} captured events`
+    : "No activity captured yet";
+  byId("activityPreview").innerHTML = recentActivityItems().map(queueItemRow).join("") ||
+    emptyQueue("No activity yet", "Create, update, approve, or delete work to build history.", "records");
+}
+
+function dashboardKpis(totalRecords) {
+  const summary = state.crmSummary || {};
+  const atRiskCount = summary.at_risk_account_count ?? atRiskAccounts().length;
+  const deliveryCount = activeDeliveryItems().length;
+  const peopleCount = activePeopleItems().length;
+  return [
+    {
+      label: "Revenue",
+      value: money.format(summary.total_arr || 0),
+      detail: `${state.accounts.length} customers / ${money.format(summary.open_pipeline_amount || 0)} open pipeline`,
+      tone: "teal",
+      view: "crm",
+    },
+    {
+      label: "Customer Risk",
+      value: String(atRiskCount),
+      detail: atRiskCount === 1 ? "customer needs follow-up" : "customers need follow-up",
+      tone: "amber",
+      view: "crm",
+    },
+    {
+      label: "Delivery",
+      value: String(deliveryCount),
+      detail: `${moduleById("issues")?.record_count || 0} delivery work items`,
+      tone: "blue",
+      view: "issues",
+    },
+    {
+      label: "People",
+      value: String(peopleCount),
+      detail: `${moduleById("hr")?.record_count || 0} people work items`,
+      tone: "rose",
+      view: "hr",
+    },
+    {
+      label: "Approvals",
+      value: String(openApprovalRequests().length),
+      detail: `${state.proposals.length} total change requests`,
+      tone: "green",
+      view: "proposals",
+    },
+    {
+      label: "Activity",
+      value: String(state.auditEvents.length),
+      detail: `${totalRecords} governed work items`,
+      tone: "neutral",
+      view: "audit",
+    },
+  ];
+}
+
+function attentionItems() {
+  return [
+    ...atRiskAccounts().map((account) => ({
+      tone: account.health === "red" ? "red" : "amber",
+      category: "Customer follow-up",
+      title: account.name || account.id,
+      detail: `${label(account.health)} health / renewal ${account.renewal_date}`,
+      view: "crm",
+    })),
+    ...openPipelineItems().slice(0, 2),
+    ...activeDeliveryItems().slice(0, 3),
+    ...activePeopleItems().slice(0, 3),
+  ];
+}
+
+function atRiskAccounts() {
+  return state.accounts.filter((account) =>
+    ["yellow", "red"].includes(String(account.health || "").toLowerCase()) ||
+    ["renewal_due", "renewal_proposal"].includes(String(account.stage || "").toLowerCase()),
+  );
+}
+
+function openPipelineItems() {
+  return state.opportunities
+    .filter((opportunity) =>
+      !["closed_won", "closed_lost", "renewed", "churned"].includes(opportunity.stage),
+    )
+    .map((opportunity) => ({
+      tone: "teal",
+      category: "Pipeline next step",
+      title: opportunity.account_name || opportunity.account_id || opportunity.id,
+      detail: `${money.format(opportunity.amount || 0)} / ${opportunity.next_step || label(opportunity.stage)}`,
+      view: "crm",
+    }));
+}
+
+function activeDeliveryItems() {
+  const module = moduleById("issues");
+  if (!module) {
+    return [];
+  }
+  return module.records
+    .filter((record) => activeRecordState(record))
+    .map((record) => ({
+      tone: deliveryTone(record),
+      category: label(record.object_type),
+      title: recordName(record.data || record),
+      detail: recordDetail(record),
+      path: record.path,
+    }));
+}
+
+function activePeopleItems() {
+  const module = moduleById("hr");
+  if (!module) {
+    return [];
+  }
+  return module.records
+    .filter((record) => activeRecordState(record))
+    .map((record) => ({
+      tone: "rose",
+      category: label(record.object_type),
+      title: recordName(record.data || record),
+      detail: recordDetail(record),
+      path: record.path,
+    }));
+}
+
+function activeRecordState(record) {
+  const data = record.data || record;
+  const metadata = data.metadata || {};
+  const stateValue = String(metadata.state || metadata.stage || data.status || "").toLowerCase();
+  return !["", "done", "closed", "resolved", "completed", "cancelled", "inactive"].includes(stateValue);
+}
+
+function deliveryTone(record) {
+  const data = record.data || record;
+  const metadata = data.metadata || {};
+  const severity = String(metadata.severity || metadata.priority || "").toLowerCase();
+  if (record.object_type === "incident" || ["critical", "high"].includes(severity)) {
+    return "amber";
+  }
+  return "blue";
+}
+
+function recordDetail(record) {
+  const data = record.data || record;
+  const metadata = data.metadata || {};
+  const facts = [
+    metadata.state || metadata.stage || data.status,
+    metadata.next_step || metadata.approver || metadata.target_date || metadata.start_window || metadata.starts_on,
+  ].filter(Boolean);
+  return facts.map((item) => label(item)).join(" / ") || label(data.status || "active");
+}
+
+function openApprovalRequests() {
+  return state.proposals.filter((item) => {
+    const proposal = item.proposal || {};
+    return ["proposed", "requires_approval"].includes(proposal.status) ||
+      (item.remaining_approvers || []).length > 0;
+  });
+}
+
+function recentActivityItems() {
+  return state.auditEvents.slice(0, 5).map((item) => {
+    const event = item.event;
+    return {
+      tone: event.result === "completed" ? "green" : "amber",
+      category: label(event.result || "activity"),
+      title: `${label(event.action)} ${label(event.object_type)}`,
+      detail: `${event.object_id} / ${event.actor}`,
+      auditPath: item.path,
+    };
+  });
+}
+
+function queueItemRow(item) {
+  let attribute = `data-flow-view="${escapeHtml(item.view || "modules")}"`;
+  if (item.path) {
+    attribute = `data-module-record-path="${escapeHtml(item.path)}"`;
+  } else if (item.proposalPath) {
+    attribute = `data-proposal-path="${escapeHtml(item.proposalPath)}"`;
+  } else if (item.auditPath) {
+    attribute = `data-audit-path="${escapeHtml(item.auditPath)}"`;
+  }
+  return `
+    <button class="queue-item ${escapeHtml(item.tone || "neutral")}" type="button" ${attribute}>
+      <span class="queue-chip">${escapeHtml(item.category)}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      <small>${escapeHtml(item.detail)}</small>
+    </button>
+  `;
+}
+
+function emptyQueue(title, detail, view) {
+  return `
+    <button class="queue-empty" type="button" data-flow-view="${escapeHtml(view)}">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(detail)}</span>
+    </button>
+  `;
+}
+
 function renderObjectTypeFilter() {
   const select = byId("objectTypeFilter");
   const current = select.value;
-  const options = [`<option value="">All records</option>`];
+  const options = [`<option value="">All work items</option>`];
   state.modules.forEach((module) => {
     options.push(`<optgroup label="${escapeHtml(module.name)}">`);
     module.object_types.forEach((objectType) => {
@@ -463,12 +709,15 @@ function renderObjectTypeFilter() {
 
 function renderSummary(payload) {
   const summary = payload.summary;
+  state.crmSummary = summary;
+  state.dashboardGeneratedAt = payload.generated_at;
   byId("accountCount").textContent = summary.account_count;
   byId("totalArr").textContent = money.format(summary.total_arr);
   byId("openPipeline").textContent = money.format(summary.open_pipeline_amount);
   byId("weightedPipeline").textContent = money.format(summary.weighted_pipeline_amount);
   byId("atRisk").textContent = summary.at_risk_account_count;
   byId("generatedAt").textContent = `Generated ${payload.generated_at}`;
+  renderCompanyDashboard();
 }
 
 function renderAccounts() {
@@ -490,7 +739,7 @@ function renderOpportunities() {
     (opportunity) =>
       !["closed_won", "closed_lost", "renewed", "churned"].includes(opportunity.stage),
   );
-  byId("opportunityCount").textContent = `${openRows.length} open records`;
+  byId("opportunityCount").textContent = `${openRows.length} open deals`;
   const rows = openRows.map((opportunity) => `
     <tr>
       <td>
@@ -517,31 +766,31 @@ function renderSkill() {
 }
 
 function renderObjects() {
-  const scope = state.recordModuleFilter ? `${moduleMeta(state.recordModuleFilter).name} records` : "files";
+  const scope = state.recordModuleFilter ? `${moduleMeta(state.recordModuleFilter).name} items` : "items";
   byId("objectCount").textContent = `${state.objects.length} ${scope}`;
   const rows = state.objects.map((object) => `
     <button class="list-row ${selectedClass(state.selectedObject, object.path)}" type="button" data-object-path="${escapeHtml(object.path)}">
       <span>
         <strong>${escapeHtml(recordName(object.data || object))}</strong>
-        <small>${escapeHtml(object.object_type)} / ${escapeHtml(object.id)}</small>
+        <small>${escapeHtml(label(object.object_type))} / ${escapeHtml(object.id)}</small>
       </span>
-      <em>${escapeHtml(object.module || "")}</em>
+      <em>${escapeHtml(moduleMeta(object.module).name || "")}</em>
     </button>
   `);
-  byId("objectList").innerHTML = rows.join("") || `<p class="empty">No records</p>`;
+  byId("objectList").innerHTML = rows.join("") || `<p class="empty">No work items yet</p>`;
 }
 
 async function selectObject(path) {
   const payload = await fetchJson(`/object?path=${encodeURIComponent(path)}`);
   state.selectedObject = payload;
   state.activeModule = payload.object ? moduleForObjectType(payload.object.object_type) || state.activeModule : state.activeModule;
-  byId("selectedObjectTitle").textContent = `${payload.object.object_type}/${payload.object.id}`;
+  byId("selectedObjectTitle").textContent = recordName(payload.object);
   byId("selectedObjectPath").textContent = payload.path;
   byId("objectEditor").value = pretty(payload.object);
   byId("requestId").value = requestId("ui");
   byId("recordFields").value = "";
   setRecordAction("read");
-  byId("recordResultSummary").textContent = "Record loaded";
+  byId("recordResultSummary").textContent = "Work item loaded";
   byId("recordOutput").textContent = pretty({
     path: payload.path,
     hash: payload.hash,
@@ -551,25 +800,26 @@ async function selectObject(path) {
 }
 
 function renderProposals() {
-  byId("proposalCount").textContent = `${state.proposals.length} files`;
+  byId("proposalCount").textContent = `${state.proposals.length} requests`;
   const rows = state.proposals.map((item) => {
     const proposal = item.proposal;
     return `
       <button class="list-row ${selectedClass(state.selectedProposal, item.path)}" type="button" data-proposal-path="${escapeHtml(item.path)}">
         <span>
-          <strong>${escapeHtml(proposal.id)}</strong>
-          <small>${escapeHtml(proposal.object_type)} / ${escapeHtml(proposal.object_id)}</small>
+          <strong>${escapeHtml(`${label(proposal.action)} ${label(proposal.object_type)}`)}</strong>
+          <small>${escapeHtml(proposal.object_id)} / ${escapeHtml(proposal.id)}</small>
         </span>
-        <em class="status-pill ${escapeHtml(proposal.status)}">${escapeHtml(proposal.status)}</em>
+        <em class="status-pill ${escapeHtml(proposal.status)}">${escapeHtml(label(proposal.status))}</em>
       </button>
     `;
   });
-  byId("proposalList").innerHTML = rows.join("") || `<p class="empty">No proposals</p>`;
+  byId("proposalList").innerHTML = rows.join("") || `<p class="empty">No approval requests yet</p>`;
   if (!state.selectedProposal && state.proposals.length) {
     selectProposal(state.proposals[0].path);
   } else {
     renderSelectedProposal();
   }
+  renderCompanyDashboard();
 }
 
 function selectProposal(path) {
@@ -581,21 +831,21 @@ function selectProposal(path) {
 function renderSelectedProposal() {
   const selected = state.selectedProposal;
   if (!selected) {
-    byId("selectedProposalTitle").textContent = "Proposal";
-    byId("selectedProposalPath").textContent = "No proposal selected";
+    byId("selectedProposalTitle").textContent = "Approval Request";
+    byId("selectedProposalPath").textContent = "No request selected";
     byId("proposalFacts").innerHTML = "";
     byId("proposalOutput").textContent = "{}";
     return;
   }
 
   const proposal = selected.proposal;
-  byId("selectedProposalTitle").textContent = proposal.id;
+  byId("selectedProposalTitle").textContent = `${label(proposal.action)} ${label(proposal.object_type)}`;
   byId("selectedProposalPath").textContent = selected.path;
   byId("proposalFacts").innerHTML = [
-    ["Status", proposal.status],
-    ["Action", proposal.action],
-    ["Object", `${proposal.object_type}/${proposal.object_id}`],
-    ["Decision", proposal.policy_decision],
+    ["Status", label(proposal.status)],
+    ["Action", label(proposal.action)],
+    ["Work Item", `${proposal.object_type}/${proposal.object_id}`],
+    ["Decision", label(proposal.policy_decision)],
     ["Remaining", selected.remaining_approvers.join(", ") || "none"],
   ].map(([name, value]) => `
     <span><strong>${escapeHtml(name)}</strong>${escapeHtml(value)}</span>
@@ -604,7 +854,7 @@ function renderSelectedProposal() {
 }
 
 function renderPreviews() {
-  byId("prPreviewCount").textContent = `${state.prPreviews.length} files`;
+  byId("prPreviewCount").textContent = `${state.prPreviews.length} drafts`;
   byId("prPreviewList").innerHTML = state.prPreviews.map((item) => {
     const preview = item.preview;
     const pullRequest = preview.pull_request || {};
@@ -617,9 +867,9 @@ function renderPreviews() {
         <em>${escapeHtml(preview.branch_name || "")}</em>
       </button>
     `;
-  }).join("") || `<p class="empty">No PR previews</p>`;
+  }).join("") || `<p class="empty">No change drafts yet</p>`;
 
-  byId("issuePreviewCount").textContent = `${state.issuePreviews.length} files`;
+  byId("issuePreviewCount").textContent = `${state.issuePreviews.length} drafts`;
   byId("issuePreviewList").innerHTML = state.issuePreviews.map((item) => {
     const issue = item.preview;
     return `
@@ -631,31 +881,33 @@ function renderPreviews() {
         <em>${escapeHtml((issue.labels || []).join(", "))}</em>
       </button>
     `;
-  }).join("") || `<p class="empty">No issue previews</p>`;
+  }).join("") || `<p class="empty">No tracker drafts yet</p>`;
+  renderCompanyDashboard();
 }
 
 function renderAuditEvents() {
-  byId("auditCount").textContent = `${state.auditEvents.length} files`;
+  byId("auditCount").textContent = `${state.auditEvents.length} events`;
   byId("auditList").innerHTML = state.auditEvents.map((item) => {
     const event = item.event;
     return `
       <button class="list-row ${selectedClass(state.selectedAuditEvent, item.path)}" type="button" data-audit-path="${escapeHtml(item.path)}">
         <span>
-          <strong>${escapeHtml(event.action)} ${escapeHtml(event.object_type)}/${escapeHtml(event.object_id)}</strong>
+          <strong>${escapeHtml(label(event.action))} ${escapeHtml(label(event.object_type))}/${escapeHtml(event.object_id)}</strong>
           <small>${escapeHtml(event.actor)} - ${escapeHtml(event.timestamp)}</small>
         </span>
-        <em class="status-pill ${escapeHtml(event.result)}">${escapeHtml(event.result)}</em>
+        <em class="status-pill ${escapeHtml(event.result)}">${escapeHtml(label(event.result))}</em>
       </button>
     `;
-  }).join("") || `<p class="empty">No audit events</p>`;
+  }).join("") || `<p class="empty">No activity yet</p>`;
   if (!state.selectedAuditEvent && state.auditEvents.length) {
     selectAuditEvent(state.auditEvents[0].path);
   }
+  renderCompanyDashboard();
 }
 
 function selectAuditEvent(path) {
   state.selectedAuditEvent = state.auditEvents.find((item) => item.path === path) || null;
-  byId("auditPath").textContent = state.selectedAuditEvent ? state.selectedAuditEvent.path : "No event selected";
+  byId("auditPath").textContent = state.selectedAuditEvent ? state.selectedAuditEvent.path : "No activity selected";
   byId("auditOutput").textContent = pretty(state.selectedAuditEvent || {});
   renderAuditEvents();
 }
@@ -712,10 +964,10 @@ async function updateObject() {
 
 async function deleteObject() {
   if (!state.selectedObject || !state.selectedObject.path) {
-    throw new Error("Select a saved record before deleting");
+    throw new Error("Select a saved work item before deleting");
   }
   const object = state.selectedObject.object;
-  const confirmed = window.confirm(`Delete ${object.object_type}/${object.id}? This removes the local source file and records audit evidence.`);
+  const confirmed = window.confirm(`Delete ${object.object_type}/${object.id}? This removes the saved work item and records activity evidence.`);
   if (!confirmed) {
     setStatus("Delete cancelled");
     return;
@@ -730,11 +982,11 @@ async function deleteObject() {
     },
   });
   state.selectedObject = null;
-  byId("selectedObjectTitle").textContent = "Record";
-  byId("selectedObjectPath").textContent = "No file selected";
+  byId("selectedObjectTitle").textContent = "Work Item";
+  byId("selectedObjectPath").textContent = "No item selected";
   byId("objectEditor").value = "";
   byId("recordFields").value = "";
-  showRecordResult(result.deleted ? "Record deleted" : `Delete ${result.decision}`, result);
+  showRecordResult(result.deleted ? "Work item deleted" : `Delete ${result.decision}`, result);
   await Promise.all([loadModules(), loadObjects(), loadDashboard(), loadAuditEvents()]);
   renderFlowState();
 }
@@ -750,7 +1002,7 @@ async function createProposal() {
       fields: selectedFields(payload.object),
     },
   });
-  showRecordResult("Proposal created", result);
+  showRecordResult("Approval request created", result);
   await loadProposals();
   state.selectedProposal = state.proposals.find((item) => item.path === result.path) || result;
   activateView("proposals");
@@ -770,7 +1022,7 @@ async function proposalAction(action) {
   await Promise.all([loadModules(), loadProposals(), loadObjects(), loadDashboard(), loadAuditEvents()]);
   state.selectedProposal = state.proposals.find((item) => item.path === result.path) || result;
   renderSelectedProposal();
-  setStatus(`Proposal ${action} complete`);
+  setStatus(`Approval request ${action} complete`);
 }
 
 async function publishPrPreview() {
@@ -785,7 +1037,7 @@ async function publishPrPreview() {
   byId("proposalOutput").textContent = pretty(result);
   await loadPreviews();
   renderFlowState();
-  setStatus("PR preview written");
+  setStatus("Publication draft written");
 }
 
 async function validatePr() {
@@ -795,7 +1047,7 @@ async function validatePr() {
     body: {},
   });
   byId("proposalOutput").textContent = result.report || pretty(result);
-  setStatus(result.valid ? "PR check passed" : "PR check failed");
+  setStatus(result.valid ? "Draft check passed" : "Draft check failed");
 }
 
 async function createIssuePreview() {
@@ -803,7 +1055,7 @@ async function createIssuePreview() {
     method: "POST",
     body: issuePayload(false),
   });
-  byId("issueResultSummary").textContent = `Created #${result.issue.number}`;
+  byId("issueResultSummary").textContent = `Created draft #${result.issue.number}`;
   await loadPreviews();
   renderFlowState();
 }
@@ -811,13 +1063,13 @@ async function createIssuePreview() {
 async function updateIssuePreview() {
   const issueNumber = Number(byId("issueNumber").value);
   if (!issueNumber) {
-    throw new Error("Issue number is required");
+    throw new Error("Draft number is required");
   }
   const result = await fetchJson(`/github/issues/${issueNumber}`, {
     method: "POST",
     body: issuePayload(true),
   });
-  byId("issueResultSummary").textContent = `Updated #${result.issue.number}`;
+  byId("issueResultSummary").textContent = `Updated draft #${result.issue.number}`;
   await loadPreviews();
   renderFlowState();
 }
@@ -847,10 +1099,10 @@ async function recordPayload() {
   try {
     object = JSON.parse(byId("objectEditor").value);
   } catch (error) {
-    throw new Error(`Record JSON is invalid: ${error.message}`);
+    throw new Error(`Work item JSON is invalid: ${error.message}`);
   }
   if (!object || typeof object !== "object" || Array.isArray(object)) {
-    throw new Error("Record JSON must be an object");
+    throw new Error("Work item JSON must be an object");
   }
   return { object };
 }
@@ -865,8 +1117,8 @@ function useTemplate(templateId) {
   state.recordModuleFilter = template.module;
   state.selectedObject = null;
   byId("objectTypeFilter").value = "";
-  byId("selectedObjectTitle").textContent = `${object.object_type}/${object.id}`;
-  byId("selectedObjectPath").textContent = "New record";
+  byId("selectedObjectTitle").textContent = recordName(object);
+  byId("selectedObjectPath").textContent = "New work item";
   byId("objectEditor").value = pretty(object);
   setRecordAction("create");
   byId("recordFields").value = "";
@@ -892,10 +1144,10 @@ function newRecordForActiveModule() {
 
 async function reloadSelectedObject() {
   if (!state.selectedObject || !state.selectedObject.path) {
-    throw new Error("No saved record is selected");
+    throw new Error("No saved work item is selected");
   }
   await selectObject(state.selectedObject.path);
-  setStatus("Record reloaded");
+  setStatus("Work item reloaded");
 }
 
 function openRecordsForModule(moduleId) {
@@ -955,7 +1207,7 @@ function changedFields(before, after) {
 
 function requireProposal() {
   if (!state.selectedProposal) {
-    throw new Error("No proposal selected");
+    throw new Error("No approval request selected");
   }
   return state.selectedProposal;
 }
@@ -995,11 +1247,13 @@ function moduleById(moduleId) {
 }
 
 function moduleMeta(moduleId) {
+  const safeId = String(moduleId || "");
   return MODULE_META[moduleId] || {
-    name: moduleId,
-    glyph: moduleId.slice(0, 3).toUpperCase(),
+    name: safeId || "Workspace",
+    glyph: (safeId || "wrk").slice(0, 3).toUpperCase(),
     view: "modules",
     color: "teal",
+    description: "",
     signal: [],
     templateIds: [],
   };
@@ -1039,7 +1293,7 @@ function recordRow(record) {
     <button class="module-record" type="button" data-module-record-path="${escapeHtml(record.path)}">
       <span>
         <strong>${escapeHtml(recordName(record.data || record))}</strong>
-        <small>${escapeHtml(record.object_type)} / ${escapeHtml(record.id)}</small>
+        <small>${escapeHtml(label(record.object_type))} / ${escapeHtml(record.id)}</small>
       </span>
       <em>${escapeHtml((record.data && record.data.status) || record.status || "")}</em>
     </button>
@@ -1083,13 +1337,13 @@ function nowStamp() {
 }
 
 function flowView(labelText) {
-  if (labelText === "Records") {
+  if (labelText === "Workbench") {
     return "records";
   }
-  if (labelText === "Proposals") {
+  if (labelText === "Approvals") {
     return "proposals";
   }
-  if (labelText === "Previews") {
+  if (labelText === "Publishing") {
     return "github";
   }
   return "audit";
@@ -1182,6 +1436,20 @@ document.addEventListener("click", (event) => {
     selectObject(moduleRecord.dataset.moduleRecordPath)
       .then(() => activateView("records"))
       .catch((error) => setStatus(error.message));
+    return;
+  }
+
+  const proposalButton = event.target.closest("[data-proposal-path]");
+  if (proposalButton) {
+    selectProposal(proposalButton.dataset.proposalPath);
+    activateView("proposals");
+    return;
+  }
+
+  const auditButton = event.target.closest("[data-audit-path]");
+  if (auditButton) {
+    selectAuditEvent(auditButton.dataset.auditPath);
+    activateView("audit");
     return;
   }
 

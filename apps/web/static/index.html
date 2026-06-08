@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>opra.ai Workspace</title>
+    <title>opra.ai Company OS Dashboard</title>
     <link rel="stylesheet" href="/static/app.css">
   </head>
   <body>
@@ -12,12 +12,12 @@
         <div class="brand-mark" aria-hidden="true">OP</div>
         <div>
           <h1>opra.ai</h1>
-          <p>Local operating layer</p>
+          <p>Company OS dashboard</p>
         </div>
       </div>
       <div class="header-actions">
         <label class="field compact">
-          <span>Identity</span>
+          <span>Role</span>
           <select id="identitySelect">
             <option value="founder">Founder</option>
             <option value="sales_rep">Sales Rep</option>
@@ -29,14 +29,14 @@
     </header>
 
     <nav class="tabbar" aria-label="Workspace views">
-      <button class="active" type="button" data-view="modules">Modules</button>
-      <button type="button" data-view="crm">CRM</button>
-      <button type="button" data-view="issues">Issues</button>
-      <button type="button" data-view="hr">HR</button>
-      <button type="button" data-view="records">Records</button>
-      <button type="button" data-view="proposals">Proposals</button>
-      <button type="button" data-view="github">GitHub</button>
-      <button type="button" data-view="audit">Audit</button>
+      <button class="active" type="button" data-view="modules">Home</button>
+      <button type="button" data-view="crm">Customers</button>
+      <button type="button" data-view="issues">Delivery</button>
+      <button type="button" data-view="hr">People</button>
+      <button type="button" data-view="records">Workbench</button>
+      <button type="button" data-view="proposals">Approvals</button>
+      <button type="button" data-view="github">Publishing</button>
+      <button type="button" data-view="audit">Activity</button>
     </nav>
 
     <main class="workspace">
@@ -44,64 +44,96 @@
         <section class="flow-rail" aria-label="Governed workflow">
           <button class="flow-step active" type="button" data-flow-view="modules">
             <span>01</span>
-            <strong>Module</strong>
+            <strong>Sense</strong>
           </button>
           <button class="flow-step" type="button" data-flow-view="records">
             <span>02</span>
-            <strong>Record</strong>
+            <strong>Capture</strong>
           </button>
           <button class="flow-step" type="button" data-flow-view="records">
             <span>03</span>
-            <strong>Validate</strong>
+            <strong>Check</strong>
           </button>
           <button class="flow-step" type="button" data-flow-view="proposals">
             <span>04</span>
-            <strong>Propose</strong>
+            <strong>Approve</strong>
           </button>
           <button class="flow-step" type="button" data-flow-view="proposals">
             <span>05</span>
-            <strong>Approve</strong>
+            <strong>Commit</strong>
           </button>
           <button class="flow-step" type="button" data-flow-view="audit">
             <span>06</span>
-            <strong>Audit</strong>
+            <strong>Learn</strong>
           </button>
         </section>
 
-        <section class="module-command">
-          <div class="module-lede">
+        <section class="dashboard-command">
+          <div class="dashboard-lede">
             <div>
-              <h2>Workspace Command</h2>
-              <p id="moduleCommandSummary">Loading modules</p>
+              <h2>Company OS Dashboard</h2>
+              <p id="moduleCommandSummary">Loading operating areas</p>
             </div>
-            <div class="module-signal" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
+            <div class="dashboard-actions">
+              <button class="primary" type="button" data-template="crm_account">New Customer</button>
+              <button type="button" data-template="issue_defect">Log Delivery Work</button>
+              <button type="button" data-template="hr_job">Open Role</button>
+              <button type="button" data-flow-view="proposals">Review Approvals</button>
             </div>
           </div>
 
-          <div class="module-tiles" id="moduleTiles"></div>
+          <div class="home-kpis" id="homeKpis"></div>
+        </section>
+
+        <section class="work-queue-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Needs Attention</h2>
+                <p id="prioritySummary">Loading signals</p>
+              </div>
+            </div>
+            <div class="signal-list" id="priorityQueue"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Approvals</h2>
+                <p id="approvalSummary">Loading requests</p>
+              </div>
+            </div>
+            <div class="signal-list" id="approvalQueue"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Recent Activity</h2>
+                <p id="activitySummary">Loading activity</p>
+              </div>
+            </div>
+            <div class="signal-list" id="activityPreview"></div>
+          </section>
         </section>
 
         <section class="module-home-grid">
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Current Module</h2>
-                <p id="activeModuleSummary">CRM selected</p>
+                <h2>Operating Areas</h2>
+                <p id="activeModuleSummary">Customers selected</p>
               </div>
             </div>
+            <div class="module-tiles" id="moduleTiles"></div>
             <div class="module-focus" id="moduleFocus"></div>
           </section>
 
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Starter Records</h2>
-                <p id="starterSummary">Ready templates</p>
+                <h2>Start Work</h2>
+                <p id="starterSummary">Ready forms</p>
               </div>
             </div>
             <div class="template-grid" id="starterTemplates"></div>
@@ -110,8 +142,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Live Flow</h2>
-                <p id="liveFlowSummary">Repo state</p>
+                <h2>Operating Flow</h2>
+                <p id="liveFlowSummary">Workspace state</p>
               </div>
             </div>
             <div class="flow-state" id="flowState"></div>
@@ -120,13 +152,13 @@
       </section>
 
       <section class="view" id="crmView">
-        <section class="metrics" aria-label="CRM metrics">
+        <section class="metrics" aria-label="Customer metrics">
           <article class="metric">
-            <span>Accounts</span>
+            <span>Customers</span>
             <strong id="accountCount">0</strong>
           </article>
           <article class="metric">
-            <span>Total ARR</span>
+            <span>Booked ARR</span>
             <strong id="totalArr">$0</strong>
           </article>
           <article class="metric">
@@ -138,7 +170,7 @@
             <strong id="weightedPipeline">$0</strong>
           </article>
           <article class="metric attention">
-            <span>At risk</span>
+            <span>Needs follow-up</span>
             <strong id="atRisk">0</strong>
           </article>
         </section>
@@ -147,7 +179,7 @@
           <section class="panel wide">
             <div class="panel-heading">
               <div>
-                <h2>Accounts</h2>
+                <h2>Customers</h2>
                 <p id="generatedAt">Updated locally</p>
               </div>
             </div>
@@ -171,14 +203,14 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Skill Result</h2>
+                <h2>Revenue Intelligence</h2>
                 <p id="skillSummary">Pending</p>
               </div>
             </div>
-            <div class="segmented" role="group" aria-label="CRM skills">
+            <div class="segmented" role="group" aria-label="Customer views">
               <button class="active" type="button" data-skill="pipeline-summary">Pipeline</button>
-              <button type="button" data-skill="renewal-health">Renewal</button>
-              <button type="button" data-skill="opportunity-view">Open opps</button>
+              <button type="button" data-skill="renewal-health">Renewals</button>
+              <button type="button" data-skill="opportunity-view">Open Deals</button>
             </div>
             <pre id="skillOutput">{}</pre>
           </section>
@@ -187,7 +219,7 @@
             <div class="panel-heading">
               <div>
                 <h2>Opportunities</h2>
-                <p id="opportunityCount">0 open records</p>
+                <p id="opportunityCount">0 open deals</p>
               </div>
             </div>
             <div class="table-wrap">
@@ -213,18 +245,18 @@
         <section class="module-dashboard issues-dashboard">
           <div class="module-banner">
             <div>
-              <h2>Issues</h2>
+              <h2>Delivery</h2>
               <p id="issuesBannerSummary">Delivery workflow</p>
             </div>
-            <button class="primary" type="button" data-open-records="issues">Open Records</button>
+            <button class="primary" type="button" data-open-records="issues">Open Workbench</button>
           </div>
           <div class="module-metrics" id="issuesMetrics"></div>
           <section class="module-detail-grid">
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <h2>Issue Records</h2>
-                  <p id="issuesRecordSummary">0 records</p>
+                  <h2>Delivery Work</h2>
+                  <p id="issuesRecordSummary">0 items</p>
                 </div>
               </div>
               <div class="module-record-list" id="issuesRecordList"></div>
@@ -232,7 +264,7 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <h2>Starter Records</h2>
+                  <h2>Start Work</h2>
                   <p>Components, defects, incidents, releases</p>
                 </div>
               </div>
@@ -246,18 +278,18 @@
         <section class="module-dashboard hr-dashboard">
           <div class="module-banner">
             <div>
-              <h2>HR</h2>
+              <h2>People</h2>
               <p id="hrBannerSummary">People workflow</p>
             </div>
-            <button class="primary" type="button" data-open-records="hr">Open Records</button>
+            <button class="primary" type="button" data-open-records="hr">Open Workbench</button>
           </div>
           <div class="module-metrics" id="hrMetrics"></div>
           <section class="module-detail-grid">
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <h2>HR Records</h2>
-                  <p id="hrRecordSummary">0 records</p>
+                  <h2>People Work</h2>
+                  <p id="hrRecordSummary">0 items</p>
                 </div>
               </div>
               <div class="module-record-list" id="hrRecordList"></div>
@@ -265,7 +297,7 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <h2>Starter Records</h2>
+                  <h2>Start Work</h2>
                   <p>Jobs, candidates, employees, onboarding</p>
                 </div>
               </div>
@@ -280,8 +312,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Source Records</h2>
-                <p id="objectCount">0 files</p>
+                <h2>Work Items</h2>
+                <p id="objectCount">0 items</p>
               </div>
               <select id="objectTypeFilter" aria-label="Object type filter">
                 <option value="">All</option>
@@ -297,8 +329,8 @@
           <section class="panel editor-panel">
             <div class="panel-heading">
               <div>
-                <h2 id="selectedObjectTitle">Record</h2>
-                <p id="selectedObjectPath">No file selected</p>
+                <h2 id="selectedObjectTitle">Work Item</h2>
+                <p id="selectedObjectPath">No item selected</p>
               </div>
               <div class="record-mode" id="recordMode">Read</div>
             </div>
@@ -318,7 +350,7 @@
                 <input id="recordFields" type="text" placeholder="metadata,tags,status">
               </label>
               <label class="field">
-                <span>Request</span>
+                  <span>Request ID</span>
                 <input id="requestId" type="text">
               </label>
             </div>
@@ -326,10 +358,10 @@
               <button id="newRecordButton" type="button">New</button>
               <button id="reloadObjectButton" type="button">Reload</button>
               <button id="validateObjectButton" type="button">Validate</button>
-              <button id="policyCheckButton" type="button">Policy</button>
+              <button id="policyCheckButton" type="button">Check Policy</button>
               <button id="createObjectButton" type="button">Create</button>
               <button id="updateObjectButton" type="button">Update</button>
-              <button class="primary" id="createProposalButton" type="button">Propose</button>
+              <button class="primary" id="createProposalButton" type="button">Request Approval</button>
               <button class="danger" id="deleteObjectButton" type="button">Delete</button>
             </div>
           </section>
@@ -351,8 +383,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Proposals</h2>
-                <p id="proposalCount">0 files</p>
+                <h2>Approval Requests</h2>
+                <p id="proposalCount">0 requests</p>
               </div>
             </div>
             <div class="list" id="proposalList"></div>
@@ -361,8 +393,8 @@
           <section class="panel proposal-detail">
             <div class="panel-heading">
               <div>
-                <h2 id="selectedProposalTitle">Proposal</h2>
-                <p id="selectedProposalPath">No proposal selected</p>
+                <h2 id="selectedProposalTitle">Approval Request</h2>
+                <p id="selectedProposalPath">No request selected</p>
               </div>
             </div>
             <div class="detail-strip" id="proposalFacts"></div>
@@ -373,9 +405,9 @@
             <div class="button-row">
               <button id="approveProposalButton" type="button">Approve</button>
               <button id="rejectProposalButton" type="button">Reject</button>
-              <button id="applyProposalButton" type="button">Apply</button>
-              <button id="publishPrButton" type="button">PR Preview</button>
-              <button id="validatePrButton" type="button">PR Check</button>
+              <button id="applyProposalButton" type="button">Commit</button>
+              <button id="publishPrButton" type="button">Publish Draft</button>
+              <button id="validatePrButton" type="button">Check Draft</button>
             </div>
             <pre id="proposalOutput">{}</pre>
           </section>
@@ -387,8 +419,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>PR Previews</h2>
-                <p id="prPreviewCount">0 files</p>
+                <h2>Change Drafts</h2>
+                <p id="prPreviewCount">0 drafts</p>
               </div>
             </div>
             <div class="list" id="prPreviewList"></div>
@@ -397,7 +429,7 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Issue Preview</h2>
+                <h2>Work Tracker Draft</h2>
                 <p id="issueResultSummary">Idle</p>
               </div>
             </div>
@@ -440,8 +472,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Issue Previews</h2>
-                <p id="issuePreviewCount">0 files</p>
+                <h2>Tracker Drafts</h2>
+                <p id="issuePreviewCount">0 drafts</p>
               </div>
             </div>
             <div class="list" id="issuePreviewList"></div>
@@ -454,8 +486,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Audit Events</h2>
-                <p id="auditCount">0 files</p>
+                <h2>Activity</h2>
+                <p id="auditCount">0 events</p>
               </div>
             </div>
             <div class="list" id="auditList"></div>
@@ -463,8 +495,8 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Event Detail</h2>
-                <p id="auditPath">No event selected</p>
+                <h2>Activity Detail</h2>
+                <p id="auditPath">No activity selected</p>
               </div>
             </div>
             <pre id="auditOutput">{}</pre>
