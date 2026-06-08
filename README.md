@@ -21,7 +21,7 @@ This repository is the free developer-preview edition. It is meant for local eva
 - Generate proposal check reports for Actions summaries.
 - Build local CRM dashboard read models.
 - Run local CRM Skills.
-- Use a local Company OS dashboard for customers, delivery, people, governed work changes, approvals, publishing drafts, and activity evidence.
+- Use a local Company OS dashboard with sign-in, registration, startup personas, user administration, customers, delivery, people, governed work changes, approvals, publishing drafts, and activity evidence.
 - Create and update mock GitHub Issue previews.
 - Publish real proposal PRs and GitHub Issues with `gh` when you choose to use live GitHub integration.
 
@@ -68,6 +68,8 @@ Open:
 ```text
 http://127.0.0.1:8080/
 ```
+
+Seeded demo users are in `platform/identity/users.json`. Use UID `owner` with passcode `demo` for full access, or sign in as `customer_operator`, `support_engineer`, or `hiring_manager` to test scoped module views.
 
 ## Onboarding Docs
 

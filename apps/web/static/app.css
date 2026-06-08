@@ -107,6 +107,26 @@ small {
   flex-wrap: wrap;
 }
 
+.session-user {
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  gap: 2px;
+  min-height: 36px;
+  padding-right: 6px;
+}
+
+.session-user strong {
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.session-user span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.1;
+}
+
 button,
 select,
 input,
@@ -242,6 +262,23 @@ textarea {
   grid-template-columns: repeat(5, minmax(140px, 1fr));
   gap: 12px;
   margin-bottom: 18px;
+}
+
+.auth-grid,
+.users-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.75fr) minmax(420px, 1.25fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.auth-grid {
+  max-width: 1040px;
+  margin: 64px auto 0;
+}
+
+.users-grid {
+  grid-template-columns: minmax(420px, 0.85fr) minmax(360px, 0.65fr);
 }
 
 .flow-rail {
@@ -1281,6 +1318,8 @@ pre {
   .module-home-grid,
   .work-queue-grid,
   .records-grid,
+  .users-grid,
+  .auth-grid,
   .github-grid,
   .module-detail-grid {
     grid-template-columns: 1fr;
@@ -1310,6 +1349,10 @@ pre {
     flex-direction: column;
   }
 
+  .session-user {
+    justify-items: start;
+  }
+
   .tabbar {
     top: 134px;
     padding-inline: 16px;
@@ -1330,7 +1373,9 @@ pre {
   .report-facts,
   .record-edit-grid,
   .template-grid,
-  .type-grid {
+  .type-grid,
+  .auth-grid,
+  .users-grid {
     grid-template-columns: 1fr;
   }
 

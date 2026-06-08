@@ -1,9 +1,8 @@
 const PERSONAS = {
   owner: {
     label: "Owner",
-    username: "ssabbani",
     roles: ["founder"],
-    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit"],
+    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
     modules: ["crm", "issues", "hr"],
     templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
     landingView: "modules",
@@ -11,54 +10,80 @@ const PERSONAS = {
   },
   company_os_admin: {
     label: "Company OS Admin",
-    username: "ssabbani",
     roles: ["company_os_admin"],
-    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit"],
+    views: ["modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
     modules: ["crm", "issues", "hr"],
     templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
     landingView: "modules",
     summary: "System operations, approvals, publishing, and evidence",
   },
-  crm_manager: {
-    label: "CRM Manager",
-    username: "ssabbani",
-    roles: ["crm_manager", "sales_manager"],
+  customer_lead: {
+    label: "Customer Lead",
+    roles: ["customer_lead", "sales_manager"],
     views: ["crm", "records", "proposals", "audit"],
     modules: ["crm"],
     templates: ["crm_account", "crm_opportunity"],
     landingView: "crm",
     summary: "Customer pipeline, renewals, approvals, and CRM work items",
   },
-  crm_rep: {
-    label: "CRM Rep",
-    username: "ssabbani",
-    roles: ["crm_rep", "sales_rep"],
+  customer_operator: {
+    label: "Customer Operator",
+    roles: ["customer_operator", "sales_rep"],
     views: ["crm", "records", "proposals", "audit"],
     modules: ["crm"],
     templates: ["crm_opportunity"],
     landingView: "crm",
     summary: "Customer accounts, open deals, and CRM work changes",
   },
-  delivery_lead: {
-    label: "Delivery Lead",
-    username: "ssabbani",
-    roles: ["delivery_lead"],
+  engineering_lead: {
+    label: "Engineering Lead",
+    roles: ["engineering_lead"],
     views: ["issues", "records", "proposals", "audit"],
     modules: ["issues"],
     templates: ["issue_defect", "issue_incident", "issue_release"],
     landingView: "issues",
     summary: "Delivery work, incidents, releases, and evidence",
   },
-  people_lead: {
-    label: "People Lead",
-    username: "ssabbani",
-    roles: ["people_lead"],
+  support_engineer: {
+    label: "Support Engineer",
+    roles: ["support_engineer"],
+    views: ["issues", "records", "proposals", "audit"],
+    modules: ["issues"],
+    templates: ["issue_defect", "issue_incident"],
+    landingView: "issues",
+    summary: "Defects, incidents, RCAs, and support evidence",
+  },
+  people_ops: {
+    label: "People Ops",
+    roles: ["people_ops"],
     views: ["hr", "records", "proposals", "audit"],
     modules: ["hr"],
     templates: ["hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
     landingView: "hr",
     summary: "Hiring, onboarding, employee changes, and people requests",
   },
+  hiring_manager: {
+    label: "Hiring Manager",
+    roles: ["hiring_manager"],
+    views: ["hr", "records", "proposals", "audit"],
+    modules: ["hr"],
+    templates: ["hr_job", "hr_candidate"],
+    landingView: "hr",
+    summary: "Open roles, candidates, interviews, and onboarding requests",
+  },
+};
+
+const ROLE_LABELS = {
+  founder: "Owner",
+  company_os_admin: "Company OS Admin",
+  customer_lead: "Customer Lead",
+  customer_operator: "Customer Operator",
+  engineering_lead: "Engineering Lead",
+  support_engineer: "Support Engineer",
+  people_ops: "People Ops",
+  hiring_manager: "Hiring Manager",
+  sales_manager: "Customer Lead",
+  sales_rep: "Customer Operator",
 };
 
 const MODULE_META = {
@@ -179,7 +204,7 @@ const TEMPLATE_DEFS = {
       metadata: {
         title: "Workflow Operator",
         state: "open",
-        hiring_manager: "ssabbani",
+        hiring_manager: currentIdentity().username,
         focus: "Governed local operations",
       },
     }),
@@ -210,7 +235,7 @@ const TEMPLATE_DEFS = {
         display_name: "New Employee",
         role: "Operator",
         start_date: "2026-07-01",
-        manager: "ssabbani",
+        manager: currentIdentity().username,
       },
     }),
   },
@@ -327,8 +352,12 @@ const SELECT_OPTIONS = {
 const NUMBER_FIELDS = new Set(["arr", "amount", "probability", "discount_requested", "version"]);
 const DATE_FIELDS = new Set(["renewal_date", "close_date", "metadata.target_date", "metadata.start_window", "metadata.starts_on", "metadata.ends_on", "metadata.start_date"]);
 const LONG_TEXT_FIELDS = new Set(["next_step", "metadata.next_step", "metadata.readiness", "metadata.outcome", "metadata.focus", "metadata.notes"]);
+const SESSION_KEY = "opraSessionId";
 
 const state = {
+  sessionId: localStorage.getItem(SESSION_KEY) || "",
+  currentUser: null,
+  users: [],
   activeModule: "crm",
   activeSkill: "pipeline-summary",
   recordModuleFilter: "",
@@ -359,24 +388,53 @@ function byId(id) {
 }
 
 function currentPersona() {
-  return PERSONAS[byId("identitySelect").value] || PERSONAS.owner;
+  const persona = state.currentUser ? state.currentUser.persona : "owner";
+  return PERSONAS[persona] || PERSONAS.owner;
 }
 
 function currentIdentity() {
-  return currentPersona();
+  const persona = currentPersona();
+  if (!state.currentUser) {
+    return {
+      username: "anonymous",
+      roles: [],
+    };
+  }
+  return {
+    username: state.currentUser.uid,
+    roles: state.currentUser.roles || persona.roles,
+  };
 }
 
 function authHeaders() {
   const identity = currentIdentity();
-  return {
+  const headers = {
     "X-Opra-User": identity.username,
     "X-Opra-Roles": identity.roles.join(","),
   };
+  if (state.sessionId) {
+    headers["X-Opra-Session"] = state.sessionId;
+  }
+  return headers;
 }
 
 function applyPersonaShell() {
+  if (!state.currentUser) {
+    byId("sessionActions").hidden = true;
+    document.querySelector(".tabbar").hidden = true;
+    byId("personaStrip").hidden = true;
+    activateView("auth");
+    return;
+  }
   const persona = currentPersona();
   ensurePersonaScope();
+  byId("sessionActions").hidden = false;
+  document.querySelector(".tabbar").hidden = false;
+  byId("personaStrip").hidden = false;
+  byId("sessionUser").innerHTML = `
+    <strong>${escapeHtml(state.currentUser.display_name || state.currentUser.uid)}</strong>
+    <span>${escapeHtml(persona.label)}</span>
+  `;
   byId("personaStrip").innerHTML = `
     <span>${escapeHtml(persona.label)}</span>
     <strong>${escapeHtml(persona.summary)}</strong>
@@ -454,6 +512,10 @@ function setStatus(message) {
 
 async function loadWorkspace() {
   applyPersonaShell();
+  if (!state.currentUser) {
+    setStatus("Sign-in required");
+    return;
+  }
   setStatus("Loading workspace");
   const results = await Promise.allSettled([
     loadModules(),
@@ -462,6 +524,7 @@ async function loadWorkspace() {
     loadProposals(),
     loadPreviews(),
     loadAuditEvents(),
+    currentPersona().views.includes("users") ? loadUsers() : resetUsers(),
   ]);
   const rejected = results.find((result) => result.status === "rejected");
   if (rejected) {
@@ -479,6 +542,86 @@ async function resetCustomerState() {
   state.crmSummary = null;
   state.dashboardGeneratedAt = "";
   state.skills = {};
+}
+
+async function resetUsers() {
+  state.users = [];
+  renderUsers();
+}
+
+async function restoreSession() {
+  applyPersonaShell();
+  if (!state.sessionId) {
+    setStatus("Sign-in required");
+    return;
+  }
+  try {
+    const payload = await fetchJson("/auth/me");
+    state.currentUser = payload.user;
+    await loadWorkspace();
+  } catch (error) {
+    clearSession();
+    applyPersonaShell();
+    setStatus(error.message);
+  }
+}
+
+async function loginUser() {
+  const payload = await fetchJson("/auth/login", {
+    method: "POST",
+    body: {
+      uid: byId("loginUid").value.trim(),
+      passcode: byId("loginPasscode").value,
+    },
+  });
+  state.sessionId = payload.session_id;
+  state.currentUser = payload.user;
+  localStorage.setItem(SESSION_KEY, state.sessionId);
+  byId("loginPasscode").value = "";
+  await loadWorkspace();
+}
+
+async function registerUser() {
+  const payload = await fetchJson("/auth/register", {
+    method: "POST",
+    body: {
+      uid: byId("registerUid").value.trim(),
+      passcode: byId("registerPasscode").value,
+      display_name: byId("registerDisplayName").value.trim(),
+      email: byId("registerEmail").value.trim(),
+      persona: byId("registerPersona").value,
+    },
+  });
+  byId("registerSummary").textContent = `${payload.user.uid} registered`;
+  byId("loginUid").value = payload.user.uid;
+  byId("registerPasscode").value = "";
+  setStatus("User registered");
+}
+
+async function logoutUser() {
+  if (state.sessionId) {
+    await fetchJson("/auth/logout", { method: "POST", body: {} }).catch(() => ({}));
+  }
+  clearSession();
+  applyPersonaShell();
+  setStatus("Signed out");
+}
+
+function clearSession() {
+  state.sessionId = "";
+  state.currentUser = null;
+  state.users = [];
+  state.selectedObject = null;
+  state.selectedProposal = null;
+  state.selectedAuditEvent = null;
+  state.recordModuleFilter = "";
+  localStorage.removeItem(SESSION_KEY);
+}
+
+async function loadUsers() {
+  const payload = await fetchJson("/users");
+  state.users = payload.users || [];
+  renderUsers();
 }
 
 async function loadModules() {
@@ -1113,8 +1256,8 @@ function renderProposalReport(selected) {
     ["Requested by", proposal.created_by],
     ["Created", proposal.created_at],
     ["Target", proposal.target_path],
-    ["Required approvers", (proposal.required_approvers || []).join(", ") || "none"],
-    ["Remaining", selected.remaining_approvers.join(", ") || "none"],
+    ["Required approvers", displayApprovers(proposal.required_approvers || [])],
+    ["Remaining", displayApprovers(selected.remaining_approvers)],
   ];
   return `
     <div class="report-body">
@@ -1572,7 +1715,7 @@ function renderSelectedProposal() {
     ["Action", label(proposal.action)],
     ["Work Item", `${proposal.object_type}/${proposal.object_id}`],
     ["Decision", label(proposal.policy_decision)],
-    ["Remaining", selected.remaining_approvers.join(", ") || "none"],
+    ["Remaining", displayApprovers(selected.remaining_approvers)],
   ].map(([name, value]) => `
     <span><strong>${escapeHtml(name)}</strong>${escapeHtml(value)}</span>
   `).join("");
@@ -1641,6 +1784,60 @@ function selectAuditEvent(path) {
   byId("auditReport").innerHTML = renderActivityReport(state.selectedAuditEvent);
   byId("auditOutput").textContent = pretty(state.selectedAuditEvent || {});
   renderAuditEvents();
+}
+
+function renderUsers() {
+  const list = byId("usersList");
+  if (!list) {
+    return;
+  }
+  byId("adminPersona").innerHTML = adminPersonaOptions();
+  byId("usersCount").textContent = `${state.users.length} users`;
+  byId("userAdminSummary").textContent = currentPersona().views.includes("users")
+    ? `${currentPersona().label} can manage users`
+    : "Admin access required";
+  list.innerHTML = state.users.map((user) => {
+    const persona = PERSONAS[user.persona] || {};
+    return `
+      <button class="list-row" type="button">
+        <span>
+          <strong>${escapeHtml(user.display_name || user.uid)}</strong>
+          <small>${escapeHtml(user.uid)} / ${escapeHtml(user.email || "no email")}</small>
+        </span>
+        <em>${escapeHtml(persona.label || label(user.persona))} / ${escapeHtml((user.modules || []).map(moduleName).join(", "))}</em>
+      </button>
+    `;
+  }).join("") || `<p class="empty">No users</p>`;
+}
+
+function adminPersonaOptions() {
+  return Object.entries(PERSONAS).map(([value, persona]) => `
+    <option value="${escapeHtml(value)}">${escapeHtml(persona.label)}</option>
+  `).join("");
+}
+
+function moduleName(moduleId) {
+  return moduleMeta(moduleId).name;
+}
+
+async function createUser() {
+  const payload = await fetchJson("/users", {
+    method: "POST",
+    body: {
+      uid: byId("adminUid").value.trim(),
+      passcode: byId("adminPasscode").value,
+      display_name: byId("adminDisplayName").value.trim(),
+      email: byId("adminEmail").value.trim(),
+      persona: byId("adminPersona").value,
+    },
+  });
+  byId("userAdminSummary").textContent = `${payload.user.uid} added`;
+  byId("adminUid").value = "";
+  byId("adminPasscode").value = "";
+  byId("adminDisplayName").value = "";
+  byId("adminEmail").value = "";
+  await loadUsers();
+  setStatus("User added");
 }
 
 async function validateObject() {
@@ -2059,12 +2256,13 @@ function recordName(record) {
 
 function baseObject(id, objectType, visibility = "company") {
   const timestamp = nowStamp();
+  const actor = currentIdentity().username || "anonymous";
   return {
     id,
     object_type: objectType,
-    owner: "ssabbani",
-    created_by: "ssabbani",
-    updated_by: "ssabbani",
+    owner: actor,
+    created_by: actor,
+    updated_by: actor,
     created_at: timestamp,
     updated_at: timestamp,
     version: 1,
@@ -2107,6 +2305,15 @@ function emptyRow(columns, text) {
 
 function label(value) {
   return String(value || "").replaceAll("_", " ");
+}
+
+function roleLabel(value) {
+  return ROLE_LABELS[value] || label(value);
+}
+
+function displayApprovers(values) {
+  const approvers = values || [];
+  return approvers.length ? approvers.map(roleLabel).join(", ") : "none";
 }
 
 function displayValue(value) {
@@ -2292,23 +2499,17 @@ byId("recordAction").addEventListener("change", () => {
   setRecordAction(byId("recordAction").value);
 });
 
-byId("identitySelect").addEventListener("change", () => {
-  state.selectedObject = null;
-  state.selectedProposal = null;
-  state.selectedAuditEvent = null;
-  state.recordModuleFilter = "";
-  byId("objectTypeFilter").value = "";
-  applyPersonaShell();
-  loadWorkspace().catch((error) => setStatus(error.message));
-});
-
 byId("objectTypeFilter").addEventListener("change", () => {
   state.recordModuleFilter = "";
   state.selectedObject = null;
   loadObjects().catch((error) => setStatus(error.message));
 });
 
+bindAsync("loginButton", loginUser);
+bindAsync("registerButton", registerUser);
+bindAsync("logoutButton", logoutUser);
 bindAsync("refreshButton", loadWorkspace);
+bindAsync("createUserButton", createUser);
 bindAsync("newRecordButton", newRecordForActiveModule);
 bindAsync("reloadObjectButton", reloadSelectedObject);
 bindAsync("validateObjectButton", validateObject);
@@ -2325,6 +2526,6 @@ bindAsync("validatePrButton", validatePr);
 bindAsync("createIssueButton", createIssuePreview);
 bindAsync("updateIssueButton", updateIssuePreview);
 
-loadWorkspace().catch((error) => {
+restoreSession().catch((error) => {
   setStatus(error.message);
 });

@@ -1,0 +1,92 @@
+{
+  "users": [
+    {
+      "id": "usr_owner",
+      "uid": "owner",
+      "display_name": "Avery Founder",
+      "email": "owner@example.test",
+      "persona": "owner",
+      "roles": ["founder"],
+      "modules": ["crm", "issues", "hr"],
+      "state": "active",
+      "credential_digest": "f61542c105fcc36e30e5a9ca194ba2f211b51d1f48cba6e69e2d3aa754620107"
+    },
+    {
+      "id": "usr_admin",
+      "uid": "admin",
+      "display_name": "Riley Systems",
+      "email": "admin@example.test",
+      "persona": "company_os_admin",
+      "roles": ["company_os_admin"],
+      "modules": ["crm", "issues", "hr"],
+      "state": "active",
+      "credential_digest": "b15ac7ff802ffcb0a86c543fba503414df523790ff27be11b15e7539a79e653a"
+    },
+    {
+      "id": "usr_customer_lead",
+      "uid": "customer_lead",
+      "display_name": "Morgan Customer",
+      "email": "customer-lead@example.test",
+      "persona": "customer_lead",
+      "roles": ["customer_lead", "sales_manager"],
+      "modules": ["crm"],
+      "state": "active",
+      "credential_digest": "03fc4689e6d3e04ae882b9c019f175f22bba3b3d685433c4196a82d5e49c3b53"
+    },
+    {
+      "id": "usr_customer_operator",
+      "uid": "customer_operator",
+      "display_name": "Casey Accounts",
+      "email": "customer-operator@example.test",
+      "persona": "customer_operator",
+      "roles": ["customer_operator", "sales_rep"],
+      "modules": ["crm"],
+      "state": "active",
+      "credential_digest": "4a393eb6daba4d0d762867ffbe5fd1f306b7f820a9f0aa308b43b9896b622748"
+    },
+    {
+      "id": "usr_engineering_lead",
+      "uid": "engineering_lead",
+      "display_name": "Devon Engineering",
+      "email": "engineering-lead@example.test",
+      "persona": "engineering_lead",
+      "roles": ["engineering_lead"],
+      "modules": ["issues"],
+      "state": "active",
+      "credential_digest": "fe03faebdb6252cc74575d259154eb4eb176b10ed79cb81998fc27b53069ff9a"
+    },
+    {
+      "id": "usr_support_engineer",
+      "uid": "support_engineer",
+      "display_name": "Jordan Support",
+      "email": "support-engineer@example.test",
+      "persona": "support_engineer",
+      "roles": ["support_engineer"],
+      "modules": ["issues"],
+      "state": "active",
+      "credential_digest": "5f3cb5a84f0381d5a1d6f8c84647620d896f7dae44b2faea5dd8d64d349a70cc"
+    },
+    {
+      "id": "usr_people_ops",
+      "uid": "people_ops",
+      "display_name": "Taylor People",
+      "email": "people-ops@example.test",
+      "persona": "people_ops",
+      "roles": ["people_ops"],
+      "modules": ["hr"],
+      "state": "active",
+      "credential_digest": "d2e595fbed139c7b0899d5a8cebddb6a6e20eb267f3a58226ab51be64894b2c3"
+    },
+    {
+      "id": "usr_hiring_manager",
+      "uid": "hiring_manager",
+      "display_name": "Quinn Hiring",
+      "email": "hiring-manager@example.test",
+      "persona": "hiring_manager",
+      "roles": ["hiring_manager"],
+      "modules": ["hr"],
+      "state": "active",
+      "credential_digest": "7e008dc2cdb029290c8c9b40213fcddef306c53dd25745a87db7997106a71e08"
+    }
+  ]
+}

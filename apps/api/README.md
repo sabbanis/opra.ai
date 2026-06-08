@@ -16,8 +16,17 @@ Example requests:
 
 ```bash
 curl http://127.0.0.1:8080/
-curl -H "X-Company-OS-User: ssabbani" -H "X-Company-OS-Roles: sales_rep" http://127.0.0.1:8080/crm/summary
-curl -H "X-Company-OS-User: ssabbani" -H "X-Company-OS-Roles: sales_rep" http://127.0.0.1:8080/crm/skills/pipeline-summary
+SESSION_ID=$(
+  curl -fsS \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"uid":"owner","passcode":"demo"}' \
+    http://127.0.0.1:8080/auth/login \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["session_id"])'
+)
+curl -H "X-Opra-Session: $SESSION_ID" http://127.0.0.1:8080/auth/me
+curl -H "X-Opra-Session: $SESSION_ID" http://127.0.0.1:8080/crm/summary
+curl -H "X-Opra-Session: $SESSION_ID" http://127.0.0.1:8080/users
 ```
 
-Opening `http://127.0.0.1:8080/` in a browser serves the local workspace for CRM, Issues, HR, records, proposals, GitHub previews, and audit.
+Opening `http://127.0.0.1:8080/` in a browser serves the local workspace for sign-in, registration, Customers, Delivery, People, governed work changes, approvals, publishing drafts, activity, and owner/admin user management.

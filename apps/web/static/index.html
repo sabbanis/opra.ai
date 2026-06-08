@@ -15,19 +15,10 @@
           <p>Company OS dashboard</p>
         </div>
       </div>
-      <div class="header-actions">
-        <label class="field compact">
-          <span>Persona</span>
-          <select id="identitySelect">
-            <option value="owner">Owner</option>
-            <option value="company_os_admin">Company OS Admin</option>
-            <option value="crm_manager">CRM Manager</option>
-            <option value="crm_rep">CRM Rep</option>
-            <option value="delivery_lead">Delivery Lead</option>
-            <option value="people_lead">People Lead</option>
-          </select>
-        </label>
+      <div class="header-actions" id="sessionActions" hidden>
+        <div class="session-user" id="sessionUser"></div>
         <button id="refreshButton" type="button">Refresh</button>
+        <button id="logoutButton" type="button">Sign Out</button>
       </div>
     </header>
 
@@ -40,11 +31,76 @@
       <button type="button" data-view="proposals">Approvals</button>
       <button type="button" data-view="github">Publishing</button>
       <button type="button" data-view="audit">Activity</button>
+      <button type="button" data-view="users">Users</button>
     </nav>
     <div class="persona-strip" id="personaStrip"></div>
 
     <main class="workspace">
-      <section class="view active" id="modulesView">
+      <section class="view active" id="authView">
+        <section class="auth-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Sign In</h2>
+                <p id="loginSummary">Company OS identity required</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>UID</span>
+                <input id="loginUid" type="text" autocomplete="username">
+              </label>
+              <label class="field">
+                <span>Passcode</span>
+                <input id="loginPasscode" type="password" autocomplete="current-password">
+              </label>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="loginButton" type="button">Sign In</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Register</h2>
+                <p id="registerSummary">Create a local Company OS user</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>UID</span>
+                <input id="registerUid" type="text" autocomplete="username">
+              </label>
+              <label class="field">
+                <span>Passcode</span>
+                <input id="registerPasscode" type="password" autocomplete="new-password">
+              </label>
+              <label class="field">
+                <span>Name</span>
+                <input id="registerDisplayName" type="text">
+              </label>
+              <label class="field">
+                <span>Email</span>
+                <input id="registerEmail" type="email">
+              </label>
+              <label class="field span-2">
+                <span>Persona</span>
+                <select id="registerPersona">
+                  <option value="customer_operator">Customer Operator</option>
+                  <option value="support_engineer">Support Engineer</option>
+                  <option value="hiring_manager">Hiring Manager</option>
+                </select>
+              </label>
+            </div>
+            <div class="button-row">
+              <button id="registerButton" type="button">Register</button>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="modulesView">
         <section class="flow-rail" aria-label="Governed workflow">
           <button class="flow-step active" type="button" data-flow-view="modules">
             <span>01</span>
@@ -524,6 +580,54 @@
               <summary>Activity source</summary>
               <pre id="auditOutput">{}</pre>
             </details>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="usersView">
+        <section class="users-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Users</h2>
+                <p id="usersCount">0 users</p>
+              </div>
+            </div>
+            <div class="list" id="usersList"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Add User</h2>
+                <p id="userAdminSummary">Admin access required</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>UID</span>
+                <input id="adminUid" type="text">
+              </label>
+              <label class="field">
+                <span>Passcode</span>
+                <input id="adminPasscode" type="password">
+              </label>
+              <label class="field">
+                <span>Name</span>
+                <input id="adminDisplayName" type="text">
+              </label>
+              <label class="field">
+                <span>Email</span>
+                <input id="adminEmail" type="email">
+              </label>
+              <label class="field span-2">
+                <span>Persona</span>
+                <select id="adminPersona"></select>
+              </label>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="createUserButton" type="button">Add User</button>
+            </div>
           </section>
         </section>
       </section>

@@ -213,6 +213,11 @@ class LocalReadAPI:
                 "status": "ok",
                 "endpoints": [
                     "/health",
+                    "/auth/login",
+                    "/auth/register",
+                    "/auth/logout",
+                    "/auth/me",
+                    "/users",
                     "/skills",
                     "/modules",
                     "/objects",
