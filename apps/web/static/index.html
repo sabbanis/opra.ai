@@ -334,7 +334,11 @@
               </div>
               <div class="record-mode" id="recordMode">Read</div>
             </div>
-            <textarea id="objectEditor" spellcheck="false"></textarea>
+            <div class="work-form" id="recordForm"></div>
+            <details class="source-details">
+              <summary>Source JSON</summary>
+              <textarea id="objectEditor" spellcheck="false"></textarea>
+            </details>
             <div class="action-row">
               <label class="field">
                 <span>Action</span>
@@ -346,11 +350,11 @@
                 </select>
               </label>
               <label class="field">
-                <span>Fields</span>
+                <span>Changed Fields</span>
                 <input id="recordFields" type="text" placeholder="metadata,tags,status">
               </label>
               <label class="field">
-                  <span>Request ID</span>
+                <span>Request ID</span>
                 <input id="requestId" type="text">
               </label>
             </div>
@@ -373,7 +377,11 @@
                 <p id="recordResultSummary">Idle</p>
               </div>
             </div>
-            <pre id="recordOutput">{}</pre>
+            <div class="result-report" id="recordResultReport"></div>
+            <details class="source-details">
+              <summary>Technical response</summary>
+              <pre id="recordOutput">{}</pre>
+            </details>
           </section>
         </section>
       </section>
@@ -398,6 +406,7 @@
               </div>
             </div>
             <div class="detail-strip" id="proposalFacts"></div>
+            <div class="proposal-report" id="proposalReport"></div>
             <label class="field reason-field">
               <span>Reason</span>
               <input id="proposalReason" type="text">
@@ -409,7 +418,10 @@
               <button id="publishPrButton" type="button">Publish Draft</button>
               <button id="validatePrButton" type="button">Check Draft</button>
             </div>
-            <pre id="proposalOutput">{}</pre>
+            <details class="source-details">
+              <summary>Request source</summary>
+              <pre id="proposalOutput">{}</pre>
+            </details>
           </section>
         </section>
       </section>
@@ -499,7 +511,11 @@
                 <p id="auditPath">No activity selected</p>
               </div>
             </div>
-            <pre id="auditOutput">{}</pre>
+            <div class="activity-report" id="auditReport"></div>
+            <details class="source-details">
+              <summary>Activity source</summary>
+              <pre id="auditOutput">{}</pre>
+            </details>
           </section>
         </section>
       </section>

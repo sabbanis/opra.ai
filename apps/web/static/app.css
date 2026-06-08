@@ -1020,6 +1020,153 @@ td span,
   line-height: 1.45;
 }
 
+.work-form {
+  display: grid;
+  gap: 14px;
+  max-height: 620px;
+  overflow: auto;
+  padding: 14px;
+}
+
+.record-report-top,
+.report-facts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.report-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fact-tile {
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  padding: 10px 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.fact-tile strong {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fact-tile em {
+  color: var(--text);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.record-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.record-field textarea {
+  min-height: 92px;
+}
+
+.source-details {
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.source-details summary {
+  padding: 12px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.source-details textarea#objectEditor,
+.source-details pre {
+  min-height: 220px;
+  max-height: 360px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.result-report,
+.proposal-report,
+.activity-report {
+  min-height: 220px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 14px;
+}
+
+.report-body {
+  display: grid;
+  gap: 14px;
+}
+
+.report-section {
+  display: grid;
+  gap: 8px;
+}
+
+.report-section h3 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.report-section p,
+.report-section li {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.report-section ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.empty-report {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  min-height: 160px;
+  padding: 18px;
+  background: var(--panel-soft);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+
+.empty-report strong {
+  font-size: 15px;
+}
+
+.empty-report span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.change-table {
+  min-width: 560px;
+}
+
+.change-table th,
+.change-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
 .action-row,
 .button-row,
 .reason-field {
@@ -1051,7 +1198,7 @@ pre {
 
 .output-panel pre,
 .proposal-detail pre {
-  min-height: 500px;
+  min-height: 220px;
 }
 
 .detail-strip {
@@ -1121,7 +1268,7 @@ pre {
   .output-panel pre,
   .proposal-detail pre,
   .editor-panel textarea#objectEditor {
-    min-height: 360px;
+    min-height: 220px;
   }
 }
 
@@ -1152,6 +1299,9 @@ pre {
   .audit-grid,
   .action-row,
   .detail-strip,
+  .record-report-top,
+  .report-facts,
+  .record-edit-grid,
   .template-grid,
   .type-grid {
     grid-template-columns: 1fr;

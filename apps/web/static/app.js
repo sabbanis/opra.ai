@@ -183,6 +183,103 @@ const TEMPLATE_DEFS = {
   },
 };
 
+const CORE_FIELDS = new Set([
+  "id",
+  "object_type",
+  "owner",
+  "created_by",
+  "updated_by",
+  "created_at",
+  "updated_at",
+  "version",
+  "status",
+  "visibility",
+  "links",
+  "tags",
+  "metadata",
+]);
+
+const FIELD_LABELS = {
+  id: "Work item ID",
+  object_type: "Type",
+  owner: "Owner",
+  status: "Status",
+  visibility: "Visibility",
+  version: "Version",
+  tags: "Tags",
+  name: "Name",
+  stage: "Stage",
+  industry: "Industry",
+  arr: "ARR",
+  renewal_date: "Renewal date",
+  account_id: "Customer account",
+  amount: "Amount",
+  probability: "Probability",
+  close_date: "Close date",
+  discount_requested: "Discount requested",
+  next_step: "Next step",
+  approval_status: "Approval status",
+  "metadata.title": "Title",
+  "metadata.display_name": "Name",
+  "metadata.name": "Name",
+  "metadata.state": "State",
+  "metadata.stage": "Stage",
+  "metadata.severity": "Severity",
+  "metadata.priority": "Priority",
+  "metadata.owner_team": "Owner team",
+  "metadata.next_step": "Next step",
+  "metadata.started_at": "Started at",
+  "metadata.target_date": "Target date",
+  "metadata.readiness": "Readiness",
+  "metadata.outcome": "Outcome",
+  "metadata.source": "Source",
+  "metadata.approver": "Approver",
+  "metadata.start_window": "Start window",
+  "metadata.starts_on": "Starts on",
+  "metadata.ends_on": "Ends on",
+  "metadata.hiring_manager": "Hiring manager",
+  "metadata.focus": "Focus",
+  "metadata.notes": "Notes",
+  "metadata.role": "Role",
+  "metadata.start_date": "Start date",
+  "metadata.manager": "Manager",
+};
+
+const TYPE_FIELD_PATHS = {
+  account: ["name", "stage", "industry", "arr", "health", "renewal_date", "status", "visibility", "tags"],
+  opportunity: ["account_id", "stage", "amount", "probability", "close_date", "discount_requested", "next_step", "approval_status", "status", "visibility", "tags"],
+  component: ["metadata.name", "metadata.owner_team", "metadata.state", "status", "visibility", "tags"],
+  defect: ["metadata.title", "metadata.severity", "metadata.state", "metadata.owner_team", "metadata.next_step", "status", "visibility", "tags"],
+  feature_request: ["metadata.title", "metadata.priority", "metadata.state", "metadata.outcome", "status", "visibility", "tags"],
+  incident: ["metadata.title", "metadata.severity", "metadata.state", "metadata.started_at", "metadata.next_step", "status", "visibility", "tags"],
+  rca: ["metadata.title", "metadata.state", "metadata.outcome", "metadata.next_step", "status", "visibility", "tags"],
+  release: ["metadata.name", "metadata.state", "metadata.target_date", "metadata.readiness", "status", "visibility", "tags"],
+  candidate: ["metadata.display_name", "metadata.stage", "metadata.source", "metadata.next_step", "status", "visibility", "tags"],
+  employee: ["metadata.display_name", "metadata.role", "metadata.start_date", "metadata.manager", "status", "visibility", "tags"],
+  interview: ["metadata.display_name", "metadata.stage", "metadata.next_step", "status", "visibility", "tags"],
+  job: ["metadata.title", "metadata.state", "metadata.hiring_manager", "metadata.focus", "status", "visibility", "tags"],
+  offer: ["metadata.state", "metadata.approver", "metadata.start_window", "metadata.notes", "status", "visibility", "tags"],
+  onboarding: ["metadata.display_name", "metadata.state", "metadata.next_step", "status", "visibility", "tags"],
+  policy_ack: ["metadata.display_name", "metadata.state", "metadata.next_step", "status", "visibility", "tags"],
+  time_off: ["metadata.state", "metadata.starts_on", "metadata.ends_on", "metadata.approver", "status", "visibility", "tags"],
+};
+
+const SELECT_OPTIONS = {
+  status: ["active", "draft", "inactive"],
+  visibility: ["company", "hr_private"],
+  health: ["green", "yellow", "red"],
+  stage: ["qualified", "active_customer", "discovery", "proposal", "technical_interview", "screen", "open"],
+  approval_status: ["not_required", "pending_finance", "approved"],
+  "metadata.state": ["triage", "ready", "monitoring", "investigating", "candidate", "draft", "requested", "open", "active", "complete"],
+  "metadata.stage": ["screen", "technical_interview", "panel", "offer", "hired"],
+  "metadata.severity": ["low", "medium", "high", "critical"],
+  "metadata.priority": ["low", "medium", "high"],
+};
+
+const NUMBER_FIELDS = new Set(["arr", "amount", "probability", "discount_requested", "version"]);
+const DATE_FIELDS = new Set(["renewal_date", "close_date", "metadata.target_date", "metadata.start_window", "metadata.starts_on", "metadata.ends_on", "metadata.start_date"]);
+const LONG_TEXT_FIELDS = new Set(["next_step", "metadata.next_step", "metadata.readiness", "metadata.outcome", "metadata.focus", "metadata.notes"]);
+
 const state = {
   activeModule: "crm",
   activeSkill: "pipeline-summary",
@@ -692,6 +789,361 @@ function emptyQueue(title, detail, view) {
   `;
 }
 
+function renderRecordForm(object) {
+  const form = byId("recordForm");
+  if (!object) {
+    form.innerHTML = emptyReport("No work item selected", "Waiting for work item details.");
+    return;
+  }
+
+  const isSaved = Boolean(state.selectedObject && state.selectedObject.path);
+  const fields = editableFields(object, isSaved);
+  const facts = [
+    ["Type", label(object.object_type)],
+    ["ID", object.id],
+    ["Owner", object.owner],
+    ["Version", object.version],
+    ["Updated", object.updated_at],
+  ];
+  form.innerHTML = `
+    <div class="record-report-top">
+      ${facts.map(([name, value]) => factTile(name, value)).join("")}
+    </div>
+    <div class="record-edit-grid">
+      ${fields.map(renderRecordField).join("")}
+    </div>
+  `;
+}
+
+function editableFields(object, isSaved) {
+  const paths = [];
+  const add = (path) => {
+    if (!paths.includes(path)) {
+      paths.push(path);
+    }
+  };
+
+  add("id");
+  add("object_type");
+  add("owner");
+  (TYPE_FIELD_PATHS[object.object_type] || []).forEach(add);
+
+  Object.keys(object).forEach((key) => {
+    if (!CORE_FIELDS.has(key)) {
+      add(key);
+    }
+  });
+  Object.keys(object.metadata || {}).forEach((key) => add(`metadata.${key}`));
+
+  return paths.map((path) => ({
+    path,
+    label: fieldLabel(path),
+    value: fieldValue(object, path),
+    readonly: (path === "id" && isSaved) || path === "object_type",
+  }));
+}
+
+function renderRecordField(field) {
+  const value = field.path === "tags"
+    ? (Array.isArray(field.value) ? field.value.join(", ") : "")
+    : field.value ?? "";
+  const disabled = field.readonly ? " disabled" : "";
+  const common = `data-field-path="${escapeHtml(field.path)}"${disabled}`;
+  if (SELECT_OPTIONS[field.path]) {
+    const options = selectOptions(field.path, value);
+    return `
+      <label class="field record-field">
+        <span>${escapeHtml(field.label)}</span>
+        <select ${common}>${options}</select>
+      </label>
+    `;
+  }
+  if (LONG_TEXT_FIELDS.has(field.path)) {
+    return `
+      <label class="field record-field span-2">
+        <span>${escapeHtml(field.label)}</span>
+        <textarea ${common}>${escapeHtml(value)}</textarea>
+      </label>
+    `;
+  }
+  const type = NUMBER_FIELDS.has(field.path) ? "number" : DATE_FIELDS.has(field.path) ? "date" : "text";
+  const step = field.path === "probability" ? ` step="0.01" min="0" max="1"` : "";
+  return `
+    <label class="field record-field">
+      <span>${escapeHtml(field.label)}</span>
+      <input type="${type}"${step} value="${escapeHtml(value)}" ${common}>
+    </label>
+  `;
+}
+
+function selectOptions(path, currentValue) {
+  const values = [...SELECT_OPTIONS[path]];
+  if (currentValue && !values.includes(String(currentValue))) {
+    values.unshift(String(currentValue));
+  }
+  return values.map((value) => `
+    <option value="${escapeHtml(value)}" ${String(currentValue) === value ? "selected" : ""}>${escapeHtml(label(value))}</option>
+  `).join("");
+}
+
+function updateObjectFromField(control) {
+  const path = control.dataset.fieldPath;
+  if (!path || control.disabled) {
+    return;
+  }
+  const object = editorObject();
+  if (!object) {
+    return;
+  }
+  setFieldValue(object, path, parseFieldValue(path, control.value));
+  byId("objectEditor").value = pretty(object);
+  byId("selectedObjectTitle").textContent = recordName(object);
+  byId("recordFields").value = changedFields(
+    state.selectedObject ? state.selectedObject.object : null,
+    object,
+  ).join(",");
+}
+
+function editorObject() {
+  try {
+    const object = JSON.parse(byId("objectEditor").value || "{}");
+    return object && typeof object === "object" && !Array.isArray(object) ? object : null;
+  } catch {
+    return null;
+  }
+}
+
+function fieldValue(object, path) {
+  return path.split(".").reduce((value, part) => {
+    if (value && typeof value === "object") {
+      return value[part];
+    }
+    return undefined;
+  }, object);
+}
+
+function setFieldValue(object, path, value) {
+  const parts = path.split(".");
+  let target = object;
+  parts.slice(0, -1).forEach((part) => {
+    if (!target[part] || typeof target[part] !== "object" || Array.isArray(target[part])) {
+      target[part] = {};
+    }
+    target = target[part];
+  });
+  target[parts[parts.length - 1]] = value;
+}
+
+function parseFieldValue(path, rawValue) {
+  if (path === "tags") {
+    return csvValues(rawValue);
+  }
+  if (NUMBER_FIELDS.has(path)) {
+    const numeric = Number(rawValue);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+  return rawValue;
+}
+
+function fieldLabel(path) {
+  return FIELD_LABELS[path] || label(path.split(".").pop());
+}
+
+function renderRecordResultReport(summary, payload) {
+  if (!payload || !Object.keys(payload).length) {
+    return emptyReport("No result yet", "No checks or changes have run.");
+  }
+  const facts = [
+    ["Outcome", summary],
+    ["Decision", payload.decision],
+    ["Valid", payload.valid === undefined ? payload.validation?.valid : payload.valid],
+    ["Work item", payload.object_type && payload.object_id ? `${payload.object_type}/${payload.object_id}` : ""],
+    ["Stored at", payload.stored_object || payload.path],
+    ["Activity", payload.audit_event],
+  ].filter(([, value]) => value !== undefined && value !== "");
+  const issues = payload.issues || payload.validation?.issues || [];
+  const reasons = payload.reasons || [];
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, displayValue(value))).join("")}</div>
+      ${issues.length ? reportSection("Issues", issues.map((item) => displayValue(item))) : ""}
+      ${reasons.length ? reportSection("Reasons", reasons.map((item) => displayValue(item))) : ""}
+    </div>
+  `;
+}
+
+function renderProposalReport(selected) {
+  if (!selected) {
+    return emptyReport("No approval request selected", "Approval queue idle.");
+  }
+  const proposal = selected.proposal;
+  const before = proposal.before || null;
+  const after = proposal.after || {};
+  const changes = changeRows(before, after);
+  const facts = [
+    ["Requested by", proposal.created_by],
+    ["Created", proposal.created_at],
+    ["Target", proposal.target_path],
+    ["Required approvers", (proposal.required_approvers || []).join(", ") || "none"],
+    ["Remaining", selected.remaining_approvers.join(", ") || "none"],
+  ];
+  return `
+    <div class="report-body">
+      <section class="report-section">
+        <h3>Decision Summary</h3>
+        <p>${escapeHtml(label(proposal.action))} ${escapeHtml(label(proposal.object_type))} ${escapeHtml(proposal.object_id)} is ${escapeHtml(label(proposal.status))} with policy decision ${escapeHtml(label(proposal.policy_decision))}.</p>
+      </section>
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, value)).join("")}</div>
+      ${renderChangeReport(before, changes)}
+      ${proposal.reasons?.length ? reportSection("Policy Reasons", proposal.reasons) : ""}
+    </div>
+  `;
+}
+
+function renderChangeReport(before, changes) {
+  if (!changes.length) {
+    return reportSection("Changes", [before ? "No field-level changes detected." : "New work item will be created."]);
+  }
+  const rows = changes.slice(0, 18).map((item) => `
+    <tr>
+      <th>${escapeHtml(fieldLabel(item.path))}</th>
+      <td>${escapeHtml(displayValue(item.before))}</td>
+      <td>${escapeHtml(displayValue(item.after))}</td>
+    </tr>
+  `).join("");
+  return `
+    <section class="report-section">
+      <h3>${before ? "Proposed Changes" : "New Work Item"}</h3>
+      <div class="table-wrap">
+        <table class="change-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Before</th>
+              <th>After</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderActivityReport(item) {
+  if (!item) {
+    return emptyReport("No activity captured yet", "Workspace history is empty.");
+  }
+  const event = item.event;
+  const facts = [
+    ["Result", label(event.result)],
+    ["Actor", event.actor],
+    ["Action", label(event.action)],
+    ["Work item", `${event.object_type}/${event.object_id}`],
+    ["Request", event.request_id],
+    ["Source", label(event.source_interface)],
+    ["Captured", event.timestamp],
+  ];
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, value)).join("")}</div>
+      ${renderChangeReport(event.before || null, changeRows(event.before || null, event.after || null))}
+    </div>
+  `;
+}
+
+function changeRows(before, after) {
+  if (!after && !before) {
+    return [];
+  }
+  const beforeFlat = flattenReportFields(before || {});
+  const afterFlat = flattenReportFields(after || {});
+  const keys = new Set([...Object.keys(beforeFlat), ...Object.keys(afterFlat)]);
+  return [...keys]
+    .sort((left, right) => reportFieldRank(left) - reportFieldRank(right) || left.localeCompare(right))
+    .filter((key) => JSON.stringify(beforeFlat[key]) !== JSON.stringify(afterFlat[key]))
+    .map((key) => ({
+      path: key,
+      before: beforeFlat[key],
+      after: afterFlat[key],
+    }));
+}
+
+function flattenReportFields(object) {
+  const flat = {};
+  if (!object || typeof object !== "object") {
+    return flat;
+  }
+  Object.entries(object).forEach(([key, value]) => {
+    if (["links", "created_by", "updated_by"].includes(key)) {
+      return;
+    }
+    if (key === "metadata" && value && typeof value === "object") {
+      Object.entries(value).forEach(([metadataKey, metadataValue]) => {
+        flat[`metadata.${metadataKey}`] = metadataValue;
+      });
+      return;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      flat[key] = JSON.stringify(value);
+      return;
+    }
+    flat[key] = value;
+  });
+  return flat;
+}
+
+function reportFieldRank(path) {
+  const order = ["name", "metadata.title", "metadata.display_name", "stage", "metadata.stage", "status", "health", "amount", "arr", "metadata.state"];
+  const index = order.indexOf(path);
+  return index === -1 ? 100 : index;
+}
+
+function factTile(name, value) {
+  return `
+    <span class="fact-tile">
+      <strong>${escapeHtml(name)}</strong>
+      <em>${escapeHtml(displayValue(value))}</em>
+    </span>
+  `;
+}
+
+function reportSection(title, rows) {
+  return `
+    <section class="report-section">
+      <h3>${escapeHtml(title)}</h3>
+      <ul>${rows.map((row) => `<li>${escapeHtml(displayValue(row))}</li>`).join("")}</ul>
+    </section>
+  `;
+}
+
+function emptyReport(title, detail) {
+  return `
+    <div class="empty-report">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(detail)}</span>
+    </div>
+  `;
+}
+
+function renderDraftCheckReport(result) {
+  const lines = String(result.report || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const facts = [
+    ["Outcome", result.valid ? "passed" : "failed"],
+    ["Decision", result.decision],
+    ["Proposal", result.proposal_id],
+  ].filter(([, value]) => value !== undefined && value !== "");
+  return `
+    <div class="report-body">
+      <div class="report-facts">${facts.map(([name, value]) => factTile(name, value)).join("")}</div>
+      ${lines.length ? reportSection("Draft Check", lines) : ""}
+    </div>
+  `;
+}
+
 function renderObjectTypeFilter() {
   const select = byId("objectTypeFilter");
   const current = select.value;
@@ -787,10 +1239,17 @@ async function selectObject(path) {
   byId("selectedObjectTitle").textContent = recordName(payload.object);
   byId("selectedObjectPath").textContent = payload.path;
   byId("objectEditor").value = pretty(payload.object);
+  renderRecordForm(payload.object);
   byId("requestId").value = requestId("ui");
   byId("recordFields").value = "";
   setRecordAction("read");
   byId("recordResultSummary").textContent = "Work item loaded";
+  byId("recordResultReport").innerHTML = renderRecordResultReport("Work item loaded", {
+    path: payload.path,
+    hash: payload.hash,
+    object_type: payload.object.object_type,
+    object_id: payload.object.id,
+  });
   byId("recordOutput").textContent = pretty({
     path: payload.path,
     hash: payload.hash,
@@ -834,6 +1293,7 @@ function renderSelectedProposal() {
     byId("selectedProposalTitle").textContent = "Approval Request";
     byId("selectedProposalPath").textContent = "No request selected";
     byId("proposalFacts").innerHTML = "";
+    byId("proposalReport").innerHTML = renderProposalReport(null);
     byId("proposalOutput").textContent = "{}";
     return;
   }
@@ -850,6 +1310,7 @@ function renderSelectedProposal() {
   ].map(([name, value]) => `
     <span><strong>${escapeHtml(name)}</strong>${escapeHtml(value)}</span>
   `).join("");
+  byId("proposalReport").innerHTML = renderProposalReport(selected);
   byId("proposalOutput").textContent = pretty(selected);
 }
 
@@ -901,6 +1362,9 @@ function renderAuditEvents() {
   }).join("") || `<p class="empty">No activity yet</p>`;
   if (!state.selectedAuditEvent && state.auditEvents.length) {
     selectAuditEvent(state.auditEvents[0].path);
+  } else if (!state.auditEvents.length) {
+    byId("auditReport").innerHTML = renderActivityReport(null);
+    byId("auditOutput").textContent = "{}";
   }
   renderCompanyDashboard();
 }
@@ -908,6 +1372,7 @@ function renderAuditEvents() {
 function selectAuditEvent(path) {
   state.selectedAuditEvent = state.auditEvents.find((item) => item.path === path) || null;
   byId("auditPath").textContent = state.selectedAuditEvent ? state.selectedAuditEvent.path : "No activity selected";
+  byId("auditReport").innerHTML = renderActivityReport(state.selectedAuditEvent);
   byId("auditOutput").textContent = pretty(state.selectedAuditEvent || {});
   renderAuditEvents();
 }
@@ -985,6 +1450,7 @@ async function deleteObject() {
   byId("selectedObjectTitle").textContent = "Work Item";
   byId("selectedObjectPath").textContent = "No item selected";
   byId("objectEditor").value = "";
+  renderRecordForm(null);
   byId("recordFields").value = "";
   showRecordResult(result.deleted ? "Work item deleted" : `Delete ${result.decision}`, result);
   await Promise.all([loadModules(), loadObjects(), loadDashboard(), loadAuditEvents()]);
@@ -1035,6 +1501,7 @@ async function publishPrPreview() {
     },
   });
   byId("proposalOutput").textContent = pretty(result);
+  byId("proposalReport").innerHTML = renderRecordResultReport("Publication draft written", result);
   await loadPreviews();
   renderFlowState();
   setStatus("Publication draft written");
@@ -1047,6 +1514,7 @@ async function validatePr() {
     body: {},
   });
   byId("proposalOutput").textContent = result.report || pretty(result);
+  byId("proposalReport").innerHTML = renderDraftCheckReport(result);
   setStatus(result.valid ? "Draft check passed" : "Draft check failed");
 }
 
@@ -1120,10 +1588,16 @@ function useTemplate(templateId) {
   byId("selectedObjectTitle").textContent = recordName(object);
   byId("selectedObjectPath").textContent = "New work item";
   byId("objectEditor").value = pretty(object);
+  renderRecordForm(object);
   setRecordAction("create");
   byId("recordFields").value = "";
   byId("requestId").value = requestId("ui");
   byId("recordResultSummary").textContent = `${template.label} template loaded`;
+  byId("recordResultReport").innerHTML = renderRecordResultReport(`${template.label} template loaded`, {
+    object_type: template.object_type,
+    object_id: object.id,
+    decision: "ready",
+  });
   byId("recordOutput").textContent = pretty({
     module: template.module,
     object_type: template.object_type,
@@ -1214,6 +1688,7 @@ function requireProposal() {
 
 function showRecordResult(summary, payload) {
   byId("recordResultSummary").textContent = summary;
+  byId("recordResultReport").innerHTML = renderRecordResultReport(summary, payload);
   byId("recordOutput").textContent = pretty(payload);
   setStatus(summary);
 }
@@ -1355,6 +1830,22 @@ function emptyRow(columns, text) {
 
 function label(value) {
   return String(value || "").replaceAll("_", " ");
+}
+
+function displayValue(value) {
+  if (value === undefined || value === null || value === "") {
+    return "none";
+  }
+  if (typeof value === "boolean") {
+    return value ? "yes" : "no";
+  }
+  if (Array.isArray(value)) {
+    return value.length ? value.map(displayValue).join(", ") : "none";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
 }
 
 function pretty(value) {
@@ -1499,9 +1990,18 @@ byId("auditList").addEventListener("click", (event) => {
   }
 });
 
+byId("recordForm").addEventListener("input", (event) => {
+  updateObjectFromField(event.target);
+});
+
+byId("recordForm").addEventListener("change", (event) => {
+  updateObjectFromField(event.target);
+});
+
 byId("objectEditor").addEventListener("input", () => {
   try {
     const object = JSON.parse(byId("objectEditor").value);
+    renderRecordForm(object);
     byId("recordFields").value = changedFields(
       state.selectedObject ? state.selectedObject.object : null,
       object,
