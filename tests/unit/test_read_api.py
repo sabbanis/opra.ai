@@ -42,6 +42,23 @@ class LocalReadAPITests(unittest.TestCase):
         self.assertEqual(response.body["name"], "opra.ai API")
         self.assertIn("/crm/summary", response.body["endpoints"])
         self.assertIn("/proposals", response.body["endpoints"])
+        self.assertIn("/objects/delete", response.body["endpoints"])
+
+    def test_skills_endpoint_returns_workspace_crud_descriptors(self) -> None:
+        api = LocalReadAPI(repo_root=Path("."), policy_engine=self._policy_engine())
+
+        response = api.handle_get(
+            path="/skills",
+            query={},
+            user=User(id="ssabbani", username="ssabbani", roles=("founder",)),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        skill_names = {skill["name"] for skill in response.body["skills"]}
+        self.assertIn("record-create", skill_names)
+        self.assertIn("record-read", skill_names)
+        self.assertIn("record-update", skill_names)
+        self.assertIn("record-delete", skill_names)
 
     def test_health_returns_ok_without_crm_data(self) -> None:
         api = LocalReadAPI(repo_root=Path("."), policy_engine=self._policy_engine())
@@ -282,6 +299,55 @@ class LocalReadAPITests(unittest.TestCase):
 
             self.assertEqual(previews.status_code, 200)
             self.assertEqual(len(previews.body["issues"]), 1)
+
+    def test_delete_object_removes_file_and_records_audit_event(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_seed(root)
+            account_path = root / "modules/crm/objects/accounts/acct_acme.yaml"
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+
+            response = api.handle_post(
+                path="/objects/delete",
+                body={
+                    "path": "modules/crm/objects/accounts/acct_acme.yaml",
+                    "request_id": "req_delete_account",
+                },
+                user=User(id="ssabbani", username="ssabbani", roles=("founder",)),
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.body["deleted"])
+            self.assertFalse(account_path.exists())
+
+            audit = api.handle_get(
+                path="/audit/events",
+                query={},
+                user=User(id="ssabbani", username="ssabbani", roles=("founder",)),
+            )
+            self.assertEqual(audit.status_code, 200)
+            self.assertEqual(audit.body["events"][0]["event"]["action"], "delete")
+            self.assertEqual(audit.body["events"][0]["event"]["result"], "completed")
+
+    def test_delete_object_denies_user_without_permission(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_seed(root)
+            account_path = root / "modules/crm/objects/accounts/acct_acme.yaml"
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+
+            response = api.handle_post(
+                path="/objects/delete",
+                body={
+                    "path": "modules/crm/objects/accounts/acct_acme.yaml",
+                    "request_id": "req_denied_delete",
+                },
+                user=User(id="ssabbani", username="ssabbani", roles=("sales_rep",)),
+            )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertFalse(response.body["deleted"])
+            self.assertTrue(account_path.exists())
 
     def test_unknown_route_returns_not_found(self) -> None:
         api = LocalReadAPI(repo_root=Path("."), policy_engine=self._policy_engine())

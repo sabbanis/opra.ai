@@ -300,15 +300,17 @@
                 <h2 id="selectedObjectTitle">Record</h2>
                 <p id="selectedObjectPath">No file selected</p>
               </div>
+              <div class="record-mode" id="recordMode">Read</div>
             </div>
             <textarea id="objectEditor" spellcheck="false"></textarea>
             <div class="action-row">
               <label class="field">
                 <span>Action</span>
                 <select id="recordAction">
-                  <option value="update">Update</option>
-                  <option value="create">Create</option>
                   <option value="read">Read</option>
+                  <option value="create">Create</option>
+                  <option value="update">Update</option>
+                  <option value="delete">Delete</option>
                 </select>
               </label>
               <label class="field">
@@ -321,10 +323,14 @@
               </label>
             </div>
             <div class="button-row">
+              <button id="newRecordButton" type="button">New</button>
+              <button id="reloadObjectButton" type="button">Reload</button>
               <button id="validateObjectButton" type="button">Validate</button>
               <button id="policyCheckButton" type="button">Policy</button>
-              <button id="governedWriteButton" type="button">Write</button>
+              <button id="createObjectButton" type="button">Create</button>
+              <button id="updateObjectButton" type="button">Update</button>
               <button class="primary" id="createProposalButton" type="button">Propose</button>
+              <button class="danger" id="deleteObjectButton" type="button">Delete</button>
             </div>
           </section>
 

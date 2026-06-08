@@ -137,6 +137,16 @@ button.primary:hover {
   color: #fff;
 }
 
+button.danger {
+  border-color: #f3c4c0;
+  color: var(--red);
+}
+
+button.danger:hover {
+  background: #fff1f0;
+  border-color: var(--red);
+}
+
 select,
 input,
 textarea {
@@ -687,6 +697,35 @@ textarea {
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
   background: var(--panel-soft);
+}
+
+.record-mode {
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef5f3;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.record-mode.create {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.record-mode.update {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.record-mode.delete {
+  background: #fff1f0;
+  color: var(--red);
 }
 
 .table-wrap {

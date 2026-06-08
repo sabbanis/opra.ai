@@ -4,7 +4,7 @@ Local API application. The API should expose platform core behavior without owni
 
 ## Local Server
 
-The API surface is dependency-free and local-first. It exposes CRM dashboard reads, module summaries, source-record validation, governed writes, proposal workflow actions, GitHub preview actions, and audit evidence through the same core services used by the CLI.
+The API surface is dependency-free and local-first. It exposes CRM dashboard reads, module summaries, source-record validation, governed CRUD actions, proposal workflow actions, GitHub preview actions, CRUD Skill descriptors, and audit evidence through the same core services used by the CLI.
 
 Run it locally:
 

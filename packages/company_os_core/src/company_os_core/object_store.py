@@ -58,6 +58,13 @@ class LocalObjectStore:
             raise ValueError(f"Stored object at {path} is not a mapping")
         return StoredObject(path=path, data=data, content_hash=stable_hash(data))
 
+    def delete_object(self, object_type: str, object_id: str) -> StoredObject:
+        """Delete a stored source object and return the removed state."""
+
+        stored = self.read_object(object_type=object_type, object_id=object_id)
+        stored.path.unlink()
+        return stored
+
     def validate_object_file(self, path: Path, schema: ObjectSchema) -> ValidationResult:
         data = read_yaml(path)
         if not isinstance(data, Mapping):

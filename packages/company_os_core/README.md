@@ -17,6 +17,7 @@ This package owns the first platform primitives:
 - CRM lifecycle validation for governed stage updates
 - CRM dashboard read-model builder
 - Skill contract primitives and local CRM Skill handlers
+- Workspace CRUD Skill descriptors
 - Dependency-free local read API router
 - Mutation proposal service for reviewable local change proposals
 - Proposal approval, rejection, apply, and audit evidence flow

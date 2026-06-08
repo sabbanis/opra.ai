@@ -35,7 +35,9 @@ from company_os_core.github import (
     render_proposal_pr_validation_report,
 )
 from company_os_core.models import (
+    AuditAction,
     BaseObject,
+    EventResult,
     ObjectLink,
     ObjectStatus,
     ObjectVisibility,
@@ -54,6 +56,7 @@ from company_os_core.proposals import (
 )
 from company_os_core.schema import base_object_schema, validate_object
 from company_os_core.serialization import read_yaml, stable_hash, to_plain_data, write_yaml
+from company_os_core.workspace_skills import workspace_crud_skill_descriptors
 
 
 MODULES: tuple[Mapping[str, Any], ...] = (
@@ -139,6 +142,8 @@ class LocalReadAPI:
             return self._api_index()
         if path == "/health":
             return APIResponse(status_code=200, body={"status": "ok"})
+        if path == "/skills":
+            return self._skills()
         if path == "/modules":
             return self._modules()
         if path == "/objects":
@@ -175,6 +180,8 @@ class LocalReadAPI:
             return self._policy_check(body=body, user=user)
         if path == "/objects/governed-write":
             return self._governed_write(body=body, user=user)
+        if path == "/objects/delete":
+            return self._delete_object(body=body, user=user)
         if path == "/proposals":
             return self._create_proposal(body=body, user=user)
         if path == "/github/issues":
@@ -206,12 +213,14 @@ class LocalReadAPI:
                 "status": "ok",
                 "endpoints": [
                     "/health",
+                    "/skills",
                     "/modules",
                     "/objects",
                     "/object",
                     "/objects/validate",
                     "/objects/policy-check",
                     "/objects/governed-write",
+                    "/objects/delete",
                     "/proposals",
                     "/audit/events",
                     "/github/issues",
@@ -225,6 +234,13 @@ class LocalReadAPI:
                     "/crm/skills/opportunity-view",
                 ],
             },
+        )
+
+    def _skills(self) -> APIResponse:
+        descriptors = workspace_crud_skill_descriptors()
+        return APIResponse(
+            status_code=200,
+            body={"skills": [to_plain_data(descriptor) for descriptor in descriptors]},
         )
 
     def _crm_summary(self, user: User) -> APIResponse:
@@ -454,6 +470,100 @@ class LocalReadAPI:
             body_payload["stored_object"] = self._display_path(result.stored_object.path)
             body_payload["hash"] = result.stored_object.content_hash
         return APIResponse(status_code=200, body=body_payload)
+
+    def _delete_object(self, body: Mapping[str, Any], user: User) -> APIResponse:
+        data, path = self._object_data_from_body(body)
+        object_type = str(data.get("object_type", ""))
+        object_id = str(data.get("id", ""))
+        if not object_type or not object_id:
+            raise ValueError("object_type and id are required for delete")
+
+        store = self._object_store()
+        target_path = store.object_path(object_type=object_type, object_id=object_id)
+        if path is not None and path.resolve() != target_path.resolve():
+            raise ValueError("delete path does not match object_type/id target path")
+
+        request_id = _required_text("request_id", str(body.get("request_id", "")))
+        policy_result = self._policy_engine.evaluate(
+            user=user,
+            action=PermissionAction.DELETE,
+            obj=data,
+        )
+        if policy_result.decision == PolicyDecision.DENY:
+            audit_event = AuditEventWriter(self._event_dir()).record_mutation(
+                actor=user.username,
+                action=AuditAction.DELETE,
+                object_type=object_type,
+                object_id=object_id,
+                source_interface=SourceInterface.WEB,
+                request_id=request_id,
+                before=data,
+                after=None,
+                result=EventResult.BLOCKED,
+            )
+            return APIResponse(
+                status_code=403,
+                body={
+                    "decision": policy_result.decision.value,
+                    "deleted": False,
+                    "path": self._display_path(target_path),
+                    "object_type": object_type,
+                    "object_id": object_id,
+                    "reasons": list(policy_result.reasons),
+                    "audit_event": self._display_path(audit_event.path),
+                },
+            )
+
+        if policy_result.decision == PolicyDecision.REQUIRES_APPROVAL:
+            audit_event = AuditEventWriter(self._event_dir()).record_mutation(
+                actor=user.username,
+                action=AuditAction.DELETE,
+                object_type=object_type,
+                object_id=object_id,
+                source_interface=SourceInterface.WEB,
+                request_id=request_id,
+                before=data,
+                after=None,
+                result=EventResult.REQUIRES_APPROVAL,
+            )
+            return APIResponse(
+                status_code=200,
+                body={
+                    "decision": policy_result.decision.value,
+                    "deleted": False,
+                    "path": self._display_path(target_path),
+                    "object_type": object_type,
+                    "object_id": object_id,
+                    "reasons": list(policy_result.reasons),
+                    "required_approvers": list(policy_result.required_approvers),
+                    "audit_event": self._display_path(audit_event.path),
+                },
+            )
+
+        deleted = store.delete_object(object_type=object_type, object_id=object_id)
+        audit_event = AuditEventWriter(self._event_dir()).record_mutation(
+            actor=user.username,
+            action=AuditAction.DELETE,
+            object_type=object_type,
+            object_id=object_id,
+            source_interface=SourceInterface.WEB,
+            request_id=request_id,
+            before=deleted.data,
+            after=None,
+            result=EventResult.COMPLETED,
+        )
+        return APIResponse(
+            status_code=200,
+            body={
+                "decision": policy_result.decision.value,
+                "deleted": True,
+                "path": self._display_path(deleted.path),
+                "object_type": object_type,
+                "object_id": object_id,
+                "hash": deleted.content_hash,
+                "audit_event": self._display_path(audit_event.path),
+            },
+        )
 
     def _proposals(self) -> APIResponse:
         proposals = []

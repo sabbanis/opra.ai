@@ -10,5 +10,5 @@ Current surface:
 - CRM dashboard with accounts, opportunities, and local Skill results
 - Issues workspace for defects, incidents, feature requests, components, releases, and RCAs
 - HR workspace for jobs, candidates, employees, onboarding, policy acknowledgments, and time off
-- Universal record editor for validation, policy checks, governed writes, and proposals
+- Universal record editor for governed create, read, update, delete, validation, policy checks, and proposals
 - Proposal review/apply workflow, GitHub previews, and audit evidence

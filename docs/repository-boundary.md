@@ -17,7 +17,7 @@ Treat everything committed here as publishable.
 
 ## Not Allowed
 
-- Internal Company OS working notes, planning docs, operating records, or private
+- Internal OPRA working notes, planning docs, operating records, or private
   strategy.
 - Customer, prospect, partner, employee, investor, or vendor information that was
   not written explicitly for public use.
@@ -25,19 +25,8 @@ Treat everything committed here as publishable.
   values.
 - Absolute local filesystem paths.
 - Links or paths into private sibling repositories.
-- Internal go-to-market, roadmap, pricing, fundraising, legal, or procurement
+- Internal planning, fundraising, legal, or sensitive operating
   material.
-
-## Paid Product Boundary
-
-The public project is `opra.ai`.
-
-Future commercial offerings should use separate names, such as `opra Cloud` for
-a hosted product and `opra Enterprise` for enterprise security, deployment,
-support, and procurement needs.
-
-Commercial naming must not change what this repository is: the open-source
-developer artifact.
 
 ## Required Check
 

@@ -540,7 +540,7 @@ async function selectObject(path) {
   byId("objectEditor").value = pretty(payload.object);
   byId("requestId").value = requestId("ui");
   byId("recordFields").value = "";
-  byId("recordAction").value = "update";
+  setRecordAction("read");
   byId("recordResultSummary").textContent = "Record loaded";
   byId("recordOutput").textContent = pretty({
     path: payload.path,
@@ -695,6 +695,48 @@ async function governedWrite() {
   });
   showRecordResult(result.committed ? "Write committed" : `Write ${result.decision}`, result);
   await Promise.all([loadModules(), loadObjects(), loadDashboard(), loadAuditEvents()]);
+  if (result.stored_object) {
+    await selectObject(result.stored_object);
+  }
+}
+
+async function createObject() {
+  setRecordAction("create");
+  await governedWrite();
+}
+
+async function updateObject() {
+  setRecordAction("update");
+  await governedWrite();
+}
+
+async function deleteObject() {
+  if (!state.selectedObject || !state.selectedObject.path) {
+    throw new Error("Select a saved record before deleting");
+  }
+  const object = state.selectedObject.object;
+  const confirmed = window.confirm(`Delete ${object.object_type}/${object.id}? This removes the local source file and records audit evidence.`);
+  if (!confirmed) {
+    setStatus("Delete cancelled");
+    return;
+  }
+
+  setRecordAction("delete");
+  const result = await fetchJson("/objects/delete", {
+    method: "POST",
+    body: {
+      path: state.selectedObject.path,
+      request_id: requestValue(),
+    },
+  });
+  state.selectedObject = null;
+  byId("selectedObjectTitle").textContent = "Record";
+  byId("selectedObjectPath").textContent = "No file selected";
+  byId("objectEditor").value = "";
+  byId("recordFields").value = "";
+  showRecordResult(result.deleted ? "Record deleted" : `Delete ${result.decision}`, result);
+  await Promise.all([loadModules(), loadObjects(), loadDashboard(), loadAuditEvents()]);
+  renderFlowState();
 }
 
 async function createProposal() {
@@ -826,7 +868,7 @@ function useTemplate(templateId) {
   byId("selectedObjectTitle").textContent = `${object.object_type}/${object.id}`;
   byId("selectedObjectPath").textContent = "New record";
   byId("objectEditor").value = pretty(object);
-  byId("recordAction").value = "create";
+  setRecordAction("create");
   byId("recordFields").value = "";
   byId("requestId").value = requestId("ui");
   byId("recordResultSummary").textContent = `${template.label} template loaded`;
@@ -837,6 +879,23 @@ function useTemplate(templateId) {
   });
   activateView("records");
   renderModules();
+}
+
+function newRecordForActiveModule() {
+  const meta = moduleMeta(state.activeModule);
+  const templateId = meta.templateIds[0];
+  if (!templateId) {
+    throw new Error("No starter template is available for this module");
+  }
+  useTemplate(templateId);
+}
+
+async function reloadSelectedObject() {
+  if (!state.selectedObject || !state.selectedObject.path) {
+    throw new Error("No saved record is selected");
+  }
+  await selectObject(state.selectedObject.path);
+  setStatus("Record reloaded");
 }
 
 function openRecordsForModule(moduleId) {
@@ -867,6 +926,13 @@ function requestValue() {
 
 function requestId(prefix) {
   return `${prefix}_${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}`;
+}
+
+function setRecordAction(action) {
+  byId("recordAction").value = action;
+  const mode = byId("recordMode");
+  mode.textContent = label(action);
+  mode.className = `record-mode ${action}`;
 }
 
 function selectedFields(object) {
@@ -1177,6 +1243,10 @@ byId("objectEditor").addEventListener("input", () => {
   }
 });
 
+byId("recordAction").addEventListener("change", () => {
+  setRecordAction(byId("recordAction").value);
+});
+
 byId("identitySelect").addEventListener("change", () => {
   loadWorkspace().catch((error) => setStatus(error.message));
 });
@@ -1188,10 +1258,14 @@ byId("objectTypeFilter").addEventListener("change", () => {
 });
 
 bindAsync("refreshButton", loadWorkspace);
+bindAsync("newRecordButton", newRecordForActiveModule);
+bindAsync("reloadObjectButton", reloadSelectedObject);
 bindAsync("validateObjectButton", validateObject);
 bindAsync("policyCheckButton", policyCheck);
-bindAsync("governedWriteButton", governedWrite);
+bindAsync("createObjectButton", createObject);
+bindAsync("updateObjectButton", updateObject);
 bindAsync("createProposalButton", createProposal);
+bindAsync("deleteObjectButton", deleteObject);
 bindAsync("approveProposalButton", () => proposalAction("approve"));
 bindAsync("rejectProposalButton", () => proposalAction("reject"));
 bindAsync("applyProposalButton", () => proposalAction("apply"));

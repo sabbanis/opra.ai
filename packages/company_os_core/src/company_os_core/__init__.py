@@ -118,6 +118,10 @@ from company_os_core.skills import (
     SkillPermission,
     SkillResult,
 )
+from company_os_core.workspace_skills import (
+    WORKSPACE_CRUD_SKILL_DESCRIPTORS,
+    workspace_crud_skill_descriptors,
+)
 
 __version__ = "0.1.0"
 
@@ -213,6 +217,7 @@ __all__ = [
     "WrittenAuditEvent",
     "WrittenCRMReadModel",
     "WrittenMutationProposal",
+    "WORKSPACE_CRUD_SKILL_DESCRIPTORS",
     "__version__",
     "account_schema",
     "approval_required",
@@ -235,4 +240,5 @@ __all__ = [
     "validate_object",
     "validate_opportunity_stage_transition",
     "write_crm_read_model",
+    "workspace_crud_skill_descriptors",
 ]

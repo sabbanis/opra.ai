@@ -14,14 +14,14 @@ This repository is the free developer-preview edition. It is meant for local eva
 
 - Validate CRM source records.
 - Inspect source records as JSON.
-- Run governed local writes with audit events.
+- Run governed local create, read, update, and delete operations with audit events.
 - Create mutation proposal artifacts.
 - Validate proposal pull requests with GitHub Actions.
 - Map GitHub reviews into approval evidence.
 - Generate proposal check reports for Actions summaries.
 - Build local CRM dashboard read models.
 - Run local CRM Skills.
-- Use a browser workspace from a local API server for CRM, records, proposals, GitHub previews, and audit evidence.
+- Use a browser workspace from a local API server for CRM, Issues, HR, CRUD records, proposals, GitHub previews, and audit evidence.
 - Create and update mock GitHub Issue previews.
 - Publish real proposal PRs and GitHub Issues with `gh` when you choose to use live GitHub integration.
 
@@ -113,5 +113,3 @@ PYTHONPATH=packages/company_os_core/src:packages/company_os_cli/src python3 -m c
 
 The source code in this repository is licensed under the Apache License 2.0.
 See [LICENSE](LICENSE).
-
-A future hosted service or commercial support offering may use separate terms and a distinct edition name. The Apache-2.0 license for this source repository remains unchanged.
