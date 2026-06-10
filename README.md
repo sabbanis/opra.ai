@@ -25,6 +25,16 @@ This repository is the free developer-preview edition. It is meant for local eva
 - Create and update mock GitHub Issue previews.
 - Publish real proposal PRs and GitHub Issues with `gh` when you choose to use live GitHub integration.
 
+## Persona Flow
+
+opra.ai ships with seeded local personas so you can test the governed workflow from owner, admin, customer, delivery, and people viewpoints.
+
+<p align="center">
+  <img src="docs/assets/persona-flow.svg" alt="Persona flow graphic showing sign-in, persona scope, allowed work, policy decision, evidence, and what each seeded persona can do" width="860">
+</p>
+
+For detailed first-session steps, access boundaries, and readiness checks, see [Persona Onboarding](docs/persona-onboarding.md).
+
 ## Current Limits
 
 - The CLI module names are still `company_os_cli` and `company_os_core` during this developer preview.

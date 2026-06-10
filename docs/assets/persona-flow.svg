@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">opra.ai persona flow and allowed work</title>
+  <desc id="desc">Each persona signs in, receives persona scope, works in allowed modules, runs policy, and leaves proposal or audit evidence. Cards summarize what each persona can do.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8fbfc"/>
+      <stop offset="1" stop-color="#eef5f3"/>
+    </linearGradient>
+    <marker id="arrow" markerHeight="10" markerWidth="10" orient="auto" refX="8" refY="3">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#115e59"/>
+    </marker>
+    <style>
+      .bg { fill: url(#bg); }
+      .title { fill: #172026; font: 800 34px Inter, Arial, sans-serif; }
+      .subtitle { fill: #64727c; font: 500 16px Inter, Arial, sans-serif; }
+      .flow-card { fill: #ffffff; stroke: #d9e1e6; stroke-width: 2; }
+      .persona-card { fill: #ffffff; stroke: #d9e1e6; stroke-width: 2; }
+      .flow-title { fill: #172026; font: 800 17px Inter, Arial, sans-serif; }
+      .card-title { fill: #172026; font: 800 18px Inter, Arial, sans-serif; }
+      .card-text { fill: #4f5f69; font: 500 12px Inter, Arial, sans-serif; }
+      .label { fill: #ffffff; font: 800 11px Inter, Arial, sans-serif; }
+      .line { stroke: #115e59; stroke-width: 3; marker-end: url(#arrow); }
+      .admin { fill: #0f766e; }
+      .customers { fill: #2457a6; }
+      .delivery { fill: #9f1239; }
+      .people { fill: #a16207; }
+      .neutral { fill: #13795b; }
+      .muted { fill: #eef5f3; stroke: #cbd8dc; }
+      .muted-text { fill: #115e59; font: 800 11px Inter, Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="720"/>
+  <text class="title" x="54" y="62">Persona Flow And Scope</text>
+  <text class="subtitle" x="54" y="92">Every seeded user follows the same governed path, with persona scope deciding which modules and actions are available.</text>
+
+  <g transform="translate(54 124)">
+    <rect class="flow-card" x="0" y="0" width="168" height="108" rx="8"/>
+    <rect class="admin" x="0" y="0" width="168" height="8" rx="4"/>
+    <text class="flow-title" x="18" y="38">Sign in</text>
+    <text class="card-text" x="18" y="64">UID plus demo passcode</text>
+    <text class="card-text" x="18" y="84">creates a local session</text>
+  </g>
+  <line class="line" x1="232" y1="178" x2="278" y2="178"/>
+
+  <g transform="translate(290 124)">
+    <rect class="flow-card" x="0" y="0" width="168" height="108" rx="8"/>
+    <rect class="customers" x="0" y="0" width="168" height="8" rx="4"/>
+    <text class="flow-title" x="18" y="38">Persona scope</text>
+    <text class="card-text" x="18" y="64">Roles choose visible</text>
+    <text class="card-text" x="18" y="84">modules and views</text>
+  </g>
+  <line class="line" x1="468" y1="178" x2="514" y2="178"/>
+
+  <g transform="translate(526 124)">
+    <rect class="flow-card" x="0" y="0" width="168" height="108" rx="8"/>
+    <rect class="people" x="0" y="0" width="168" height="8" rx="4"/>
+    <text class="flow-title" x="18" y="38">Allowed work</text>
+    <text class="card-text" x="18" y="64">Use Workbench for</text>
+    <text class="card-text" x="18" y="84">scoped object types</text>
+  </g>
+  <line class="line" x1="704" y1="178" x2="750" y2="178"/>
+
+  <g transform="translate(762 124)">
+    <rect class="flow-card" x="0" y="0" width="168" height="108" rx="8"/>
+    <rect class="delivery" x="0" y="0" width="168" height="8" rx="4"/>
+    <text class="flow-title" x="18" y="38">Policy decision</text>
+    <text class="card-text" x="18" y="64">Validate, allow, deny,</text>
+    <text class="card-text" x="18" y="84">or require approval</text>
+  </g>
+  <line class="line" x1="940" y1="178" x2="986" y2="178"/>
+
+  <g transform="translate(998 124)">
+    <rect class="flow-card" x="0" y="0" width="168" height="108" rx="8"/>
+    <rect class="neutral" x="0" y="0" width="168" height="8" rx="4"/>
+    <text class="flow-title" x="18" y="38">Evidence</text>
+    <text class="card-text" x="18" y="64">Create proposals, publish,</text>
+    <text class="card-text" x="18" y="84">and review audit activity</text>
+  </g>
+
+  <g transform="translate(54 272)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="admin" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="58" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">ADMIN</text>
+    <text class="card-title" x="18" y="72">Owner</text>
+    <text class="card-text" x="18" y="98">Role: founder</text>
+    <text class="card-text" x="18" y="120">Can do: all modules, users</text>
+    <text class="card-text" x="18" y="140">Approves and publishes evidence</text>
+  </g>
+
+  <g transform="translate(326 272)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="admin" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="58" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">ADMIN</text>
+    <text class="card-title" x="18" y="72">Company OS Admin</text>
+    <text class="card-text" x="18" y="98">Role: company_os_admin</text>
+    <text class="card-text" x="18" y="120">Can do: operate all modules</text>
+    <text class="card-text" x="18" y="140">Manages users, checks, drafts</text>
+  </g>
+
+  <g transform="translate(598 272)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="customers" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="82" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">CUSTOMERS</text>
+    <text class="card-title" x="18" y="72">Customer Lead</text>
+    <text class="card-text" x="18" y="98">Roles: customer_lead, sales_manager</text>
+    <text class="card-text" x="18" y="120">Can do: accounts, opportunities</text>
+    <text class="card-text" x="18" y="140">Approves customer changes</text>
+  </g>
+
+  <g transform="translate(870 272)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="customers" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="82" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">CUSTOMERS</text>
+    <text class="card-title" x="18" y="72">Customer Operator</text>
+    <text class="card-text" x="18" y="98">Roles: customer_operator, sales_rep</text>
+    <text class="card-text" x="18" y="120">Can do: opportunity updates</text>
+    <text class="card-text" x="18" y="140">Runs validation and policy checks</text>
+  </g>
+
+  <g transform="translate(54 472)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="delivery" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="70" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">DELIVERY</text>
+    <text class="card-title" x="18" y="72">Engineering Lead</text>
+    <text class="card-text" x="18" y="98">Role: engineering_lead</text>
+    <text class="card-text" x="18" y="120">Can do: defects, incidents, releases</text>
+    <text class="card-text" x="18" y="140">Owns delivery approval evidence</text>
+  </g>
+
+  <g transform="translate(326 472)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="delivery" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="70" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">DELIVERY</text>
+    <text class="card-title" x="18" y="72">Support Engineer</text>
+    <text class="card-text" x="18" y="98">Role: support_engineer</text>
+    <text class="card-text" x="18" y="120">Can do: defects, incidents, RCAs</text>
+    <text class="card-text" x="18" y="140">Captures support next steps</text>
+  </g>
+
+  <g transform="translate(598 472)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="people" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="54" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">PEOPLE</text>
+    <text class="card-title" x="18" y="72">People Ops</text>
+    <text class="card-text" x="18" y="98">Role: people_ops</text>
+    <text class="card-text" x="18" y="120">Can do: jobs, candidates, employees</text>
+    <text class="card-text" x="18" y="140">Handles onboarding and time off</text>
+  </g>
+
+  <g transform="translate(870 472)">
+    <rect class="persona-card" x="0" y="0" width="258" height="164" rx="8"/>
+    <rect class="people" x="0" y="0" width="258" height="8" rx="4"/>
+    <rect class="muted" x="18" y="24" width="54" height="22" rx="6"/>
+    <text class="muted-text" x="31" y="39">PEOPLE</text>
+    <text class="card-title" x="18" y="72">Hiring Manager</text>
+    <text class="card-text" x="18" y="98">Role: hiring_manager</text>
+    <text class="card-text" x="18" y="120">Can do: jobs, candidates, interviews</text>
+    <text class="card-text" x="18" y="140">Handles offers and onboarding asks</text>
+  </g>
+
+  <text class="subtitle" x="54" y="678">Detailed first-session steps and boundaries live in docs/persona-onboarding.md.</text>
+</svg>
