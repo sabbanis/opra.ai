@@ -23,6 +23,7 @@ This repository is the free developer-preview edition. It is meant for local eva
 - Run local CRM Skills.
 - Use a local Company OS dashboard with sign-in, registration, startup personas, user administration, customers, delivery, people, governed work changes, approvals, publishing drafts, and activity evidence.
 - Create and update mock GitHub Issue previews.
+- Create local GitHub pull-request backed message thread previews.
 - Publish real proposal PRs and GitHub Issues with `gh` when you choose to use live GitHub integration.
 
 ## Persona Flow

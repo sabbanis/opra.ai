@@ -115,3 +115,15 @@ python3 -m company_os_cli update-github-issue \
   --number <ISSUE_NUMBER> \
   --state closed
 ```
+
+## Pull Request Messaging Previews
+
+The local Messages tab models a top-level message as a GitHub pull request and replies as pull-request comments.
+
+Local preview files are written under:
+
+```text
+platform/integrations/github/message_threads/
+```
+
+The core adapter boundary includes live GitHub operations for requesting PR reviewers, posting PR comments, and listing PR comments. The localhost UI currently uses mock previews so message flows can be tested without network access.

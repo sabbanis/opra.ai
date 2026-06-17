@@ -1004,6 +1004,7 @@ textarea {
 
 .records-grid,
 .proposal-grid,
+.messages-grid,
 .github-grid,
 .audit-grid {
   display: grid;
@@ -1017,6 +1018,10 @@ textarea {
 .proposal-grid,
 .audit-grid {
   grid-template-columns: minmax(320px, 0.7fr) minmax(560px, 1.3fr);
+}
+
+.messages-grid {
+  grid-template-columns: minmax(300px, 0.68fr) minmax(520px, 1.12fr) minmax(340px, 0.7fr);
 }
 
 .github-grid {
@@ -1392,6 +1397,10 @@ pre {
   border-bottom: 1px solid var(--line);
 }
 
+.message-facts {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .detail-strip span {
   display: grid;
   gap: 4px;
@@ -1423,6 +1432,61 @@ pre {
   min-height: 160px;
 }
 
+#messageBody,
+#messageReplyBody {
+  min-height: 150px;
+}
+
+.message-timeline {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 340px;
+  max-height: 540px;
+  overflow: auto;
+  padding: 14px;
+  background: #fff;
+}
+
+.message-item {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.message-item.pull_request_comment {
+  border-left-color: var(--blue);
+  background: #fff;
+}
+
+.message-item div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.message-item strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.message-item p {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.message-reply-field {
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+
 .empty {
   padding: 16px;
 }
@@ -1442,6 +1506,7 @@ pre {
   .onboarding-hero,
   .onboarding-grid,
   .github-grid,
+  .messages-grid,
   .module-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -1487,9 +1552,11 @@ pre {
   .module-metrics,
   .content-grid,
   .proposal-grid,
+  .messages-grid,
   .audit-grid,
   .action-row,
   .detail-strip,
+  .message-facts,
   .record-report-top,
   .report-facts,
   .record-edit-grid,

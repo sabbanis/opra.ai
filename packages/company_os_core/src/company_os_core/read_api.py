@@ -27,13 +27,16 @@ from company_os_core.crm_read_model import (
 from company_os_core.crm_skills import run_crm_skill
 from company_os_core.github import (
     DEFAULT_GITHUB_ISSUE_PREVIEW_DIR,
+    DEFAULT_GITHUB_MESSAGE_THREAD_DIR,
     DEFAULT_GITHUB_PR_PREVIEW_DIR,
+    GitHubPullRequestCommentResult,
     GitHubProposalPublisher,
     MockGitHubAdapter,
     ProposalPRValidator,
     issue_from_data,
     render_proposal_pr_validation_report,
 )
+from company_os_core.messaging import GitHubMessagingService, github_message_thread_from_data
 from company_os_core.models import (
     AuditAction,
     BaseObject,
@@ -164,6 +167,11 @@ class LocalReadAPI:
             if authorization is not None:
                 return authorization
             return self._preview_files(DEFAULT_GITHUB_ISSUE_PREVIEW_DIR, "issues")
+        if path == "/github/messages":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
+            return self._message_threads()
         if path == "/crm/summary":
             return self._crm_summary(user)
         if path == "/crm/accounts":
@@ -195,6 +203,11 @@ class LocalReadAPI:
             if authorization is not None:
                 return authorization
             return self._create_issue_preview(body)
+        if path == "/github/messages":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
+            return self._create_message_thread(body=body, user=user)
 
         parts = tuple(part for part in path.strip("/").split("/") if part)
         if len(parts) == 3 and parts[0] == "proposals":
@@ -220,6 +233,15 @@ class LocalReadAPI:
             if authorization is not None:
                 return authorization
             return self._update_issue_preview(issue_number=int(parts[2]), body=body)
+        if len(parts) == 4 and parts[0] == "github" and parts[1] == "messages":
+            authorization = self._authorize_admin_surface(user)
+            if authorization is not None:
+                return authorization
+            thread_id, operation = parts[2], parts[3]
+            if operation == "comments":
+                return self._add_message_comment(thread_id=thread_id, body=body, user=user)
+            if operation == "sync":
+                return self._sync_message_thread(thread_id=thread_id, body=body)
 
         return APIResponse(status_code=404, body={"error": f"Unknown API route: {path}"})
 
@@ -247,6 +269,7 @@ class LocalReadAPI:
                     "/proposals",
                     "/audit/events",
                     "/github/issues",
+                    "/github/messages",
                     "/github/previews/prs",
                     "/github/previews/issues",
                     "/crm/summary",
@@ -829,6 +852,69 @@ class LocalReadAPI:
             },
         )
 
+    def _message_threads(self) -> APIResponse:
+        service = GitHubMessagingService(
+            adapter=MockGitHubAdapter(),
+            repo_root=self._repo_root,
+        )
+        return APIResponse(
+            status_code=200,
+            body={
+                "threads": [
+                    self._message_thread_payload(written)
+                    for written in service.list_threads()
+                ]
+            },
+        )
+
+    def _create_message_thread(self, body: Mapping[str, Any], user: User) -> APIResponse:
+        service = GitHubMessagingService(
+            adapter=self._message_preview_adapter(body),
+            repo_root=self._repo_root,
+        )
+        written = service.create_thread(
+            title=str(body.get("title", "")),
+            body=str(body.get("body", "")),
+            author=user.username,
+            participants=_string_tuple(body.get("participants", [])),
+            base_branch=str(body.get("base_branch", "main")),
+        )
+        return APIResponse(
+            status_code=201,
+            body=self._message_thread_payload(written),
+        )
+
+    def _add_message_comment(
+        self,
+        thread_id: str,
+        body: Mapping[str, Any],
+        user: User,
+    ) -> APIResponse:
+        service = GitHubMessagingService(
+            adapter=self._message_preview_adapter(body),
+            repo_root=self._repo_root,
+        )
+        written = service.add_comment(
+            thread_id=thread_id,
+            body=str(body.get("body", "")),
+            author=user.username,
+        )
+        return APIResponse(
+            status_code=200,
+            body=self._message_thread_payload(written),
+        )
+
+    def _sync_message_thread(self, thread_id: str, body: Mapping[str, Any]) -> APIResponse:
+        service = GitHubMessagingService(
+            adapter=self._message_preview_adapter(body),
+            repo_root=self._repo_root,
+        )
+        written = service.sync_comments(thread_id=thread_id)
+        return APIResponse(
+            status_code=200,
+            body=self._message_thread_payload(written),
+        )
+
     def _authorize_reads(
         self,
         user: User,
@@ -957,6 +1043,37 @@ class LocalReadAPI:
             for path in sorted(root.glob("issue_*.yaml")):
                 adapter.seed_issue(issue_from_data(read_yaml(path)))
         return adapter
+
+    def _message_preview_adapter(self, body: Mapping[str, Any]) -> MockGitHubAdapter:
+        adapter = MockGitHubAdapter(
+            repo_url=str(body.get("repo_url", "https://github.com/local/opra.ai"))
+        )
+        root = self._repo_root / DEFAULT_GITHUB_MESSAGE_THREAD_DIR
+        if root.exists():
+            for path in sorted(root.glob("*.yaml")):
+                thread = github_message_thread_from_data(read_yaml(path))
+                adapter.seed_pull_request(thread.pull_request)
+                for message in thread.messages:
+                    if message.source != "pull_request_comment":
+                        continue
+                    adapter.seed_pull_request_comment(
+                        thread.pull_request.number,
+                        GitHubPullRequestCommentResult(
+                            id=message.id,
+                            body=message.body,
+                            author=message.author,
+                            created_at=message.created_at,
+                            updated_at=message.created_at,
+                            url=message.url,
+                        ),
+                    )
+        return adapter
+
+    def _message_thread_payload(self, written) -> Mapping[str, Any]:
+        return {
+            "path": self._display_path(written.path),
+            "thread": to_plain_data(written.thread),
+        }
 
     def _safe_repo_path(self, value: str) -> Path:
         if not value or not value.strip():

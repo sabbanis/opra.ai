@@ -2,7 +2,7 @@ const PERSONAS = {
   owner: {
     label: "Owner",
     roles: ["founder"],
-    views: ["onboarding", "modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
+    views: ["onboarding", "modules", "crm", "issues", "hr", "records", "proposals", "messages", "github", "audit", "users"],
     modules: ["crm", "issues", "hr"],
     templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
     landingView: "onboarding",
@@ -11,7 +11,7 @@ const PERSONAS = {
   company_os_admin: {
     label: "Company OS Admin",
     roles: ["company_os_admin"],
-    views: ["onboarding", "modules", "crm", "issues", "hr", "records", "proposals", "github", "audit", "users"],
+    views: ["onboarding", "modules", "crm", "issues", "hr", "records", "proposals", "messages", "github", "audit", "users"],
     modules: ["crm", "issues", "hr"],
     templates: ["crm_account", "crm_opportunity", "issue_defect", "issue_incident", "issue_release", "hr_job", "hr_candidate", "hr_employee", "hr_time_off"],
     landingView: "onboarding",
@@ -598,6 +598,8 @@ const state = {
   selectedObject: null,
   proposals: [],
   selectedProposal: null,
+  messageThreads: [],
+  selectedMessageThread: null,
   prPreviews: [],
   issuePreviews: [],
   auditEvents: [],
@@ -750,6 +752,7 @@ async function loadWorkspace() {
     personaAllowsModule("crm") ? loadDashboard() : resetCustomerState(),
     loadObjects(),
     loadProposals(),
+    currentPersona().views.includes("messages") ? loadMessages() : resetMessages(),
     currentPersona().views.includes("github") ? loadPreviews() : resetPreviews(),
     loadAuditEvents(),
     currentPersona().views.includes("users") ? loadUsers() : resetUsers(),
@@ -781,6 +784,12 @@ async function resetPreviews() {
   state.prPreviews = [];
   state.issuePreviews = [];
   renderPreviews();
+}
+
+async function resetMessages() {
+  state.messageThreads = [];
+  state.selectedMessageThread = null;
+  renderMessages();
 }
 
 async function restoreSession() {
@@ -958,6 +967,21 @@ async function loadPreviews() {
   state.prPreviews = prs.pull_requests || [];
   state.issuePreviews = issues.issues || [];
   renderPreviews();
+}
+
+async function loadMessages() {
+  const payload = await fetchJson("/github/messages");
+  state.messageThreads = payload.threads || [];
+  if (
+    state.selectedMessageThread &&
+    !state.messageThreads.some((item) => item.thread.id === state.selectedMessageThread.thread.id)
+  ) {
+    state.selectedMessageThread = null;
+  }
+  if (!state.selectedMessageThread && state.messageThreads.length) {
+    state.selectedMessageThread = state.messageThreads[0];
+  }
+  renderMessages();
 }
 
 async function loadAuditEvents() {
@@ -2026,6 +2050,71 @@ function renderPreviews() {
   renderCompanyDashboard();
 }
 
+function renderMessages() {
+  const list = byId("messageThreadList");
+  if (!list) {
+    return;
+  }
+  byId("messageThreadCount").textContent = `${state.messageThreads.length} threads`;
+  list.innerHTML = state.messageThreads.map((item) => {
+    const thread = item.thread;
+    const latest = latestMessage(thread);
+    return `
+      <button class="list-row ${selectedMessageClass(thread.id)}" type="button" data-message-thread-id="${escapeHtml(thread.id)}">
+        <span>
+          <strong>${escapeHtml(thread.title)}</strong>
+          <small>#${escapeHtml(thread.pull_request.number)} / ${escapeHtml(latest.author || thread.created_by)}</small>
+        </span>
+        <em>${escapeHtml((thread.participants || []).join(", ") || "no collaborators")}</em>
+      </button>
+    `;
+  }).join("") || `<p class="empty">No message threads yet</p>`;
+  renderSelectedMessageThread();
+}
+
+function selectedMessageClass(threadId) {
+  return state.selectedMessageThread?.thread?.id === threadId ? "selected" : "";
+}
+
+function selectMessageThread(threadId) {
+  state.selectedMessageThread = state.messageThreads.find((item) => item.thread.id === threadId) || null;
+  renderMessages();
+}
+
+function renderSelectedMessageThread() {
+  const selected = state.selectedMessageThread;
+  if (!selected) {
+    byId("selectedMessageTitle").textContent = "Message Thread";
+    byId("selectedMessagePath").textContent = "No thread selected";
+    byId("messageFacts").innerHTML = "";
+    byId("messageTimeline").innerHTML = `<p class="empty">No thread selected</p>`;
+    byId("messageOutput").textContent = "{}";
+    return;
+  }
+
+  const thread = selected.thread;
+  byId("selectedMessageTitle").textContent = thread.title;
+  byId("selectedMessagePath").textContent = selected.path;
+  byId("messageFacts").innerHTML = [
+    ["PR", `#${thread.pull_request.number}`],
+    ["State", label(thread.state)],
+    ["Author", thread.created_by],
+    ["Collaborators", (thread.participants || []).join(", ") || "none"],
+  ].map(([name, value]) => `
+    <span><strong>${escapeHtml(name)}</strong>${escapeHtml(value)}</span>
+  `).join("");
+  byId("messageTimeline").innerHTML = (thread.messages || []).map((message) => `
+    <article class="message-item ${escapeHtml(message.source)}">
+      <div>
+        <strong>${escapeHtml(message.author)}</strong>
+        <small>${escapeHtml(message.created_at || "")}</small>
+      </div>
+      <p>${formatMessageBody(message.body)}</p>
+    </article>
+  `).join("") || `<p class="empty">No messages</p>`;
+  byId("messageOutput").textContent = pretty(selected);
+}
+
 function renderAuditEvents() {
   byId("auditCount").textContent = `${state.auditEvents.length} events`;
   byId("auditList").innerHTML = state.auditEvents.map((item) => {
@@ -2276,6 +2365,43 @@ async function updateIssuePreview() {
   renderFlowState();
 }
 
+async function createMessageThreadPreview() {
+  const result = await fetchJson("/github/messages", {
+    method: "POST",
+    body: {
+      title: byId("messageTitle").value.trim(),
+      body: byId("messageBody").value,
+      participants: csvValues(byId("messageParticipants").value),
+      base_branch: "main",
+      repo_url: "https://github.com/local/opra.ai",
+    },
+  });
+  byId("messageCreateSummary").textContent = `Created PR #${result.thread.pull_request.number}`;
+  byId("messageTitle").value = "";
+  byId("messageBody").value = "";
+  await loadMessages();
+  state.selectedMessageThread = state.messageThreads.find((item) => item.thread.id === result.thread.id) || result;
+  renderMessages();
+  setStatus("Message thread created");
+}
+
+async function sendMessageReply() {
+  const selected = requireMessageThread();
+  const body = byId("messageReplyBody").value;
+  const result = await fetchJson(`/github/messages/${selected.thread.id}/comments`, {
+    method: "POST",
+    body: {
+      body,
+      repo_url: "https://github.com/local/opra.ai",
+    },
+  });
+  byId("messageReplyBody").value = "";
+  await loadMessages();
+  state.selectedMessageThread = state.messageThreads.find((item) => item.thread.id === result.thread.id) || result;
+  renderMessages();
+  setStatus("Reply posted");
+}
+
 function issuePayload(isUpdate) {
   const payload = {
     labels: csvValues(byId("issueLabels").value),
@@ -2429,6 +2555,13 @@ function requireProposal() {
     throw new Error("No approval request selected");
   }
   return state.selectedProposal;
+}
+
+function requireMessageThread() {
+  if (!state.selectedMessageThread) {
+    throw new Error("No message thread selected");
+  }
+  return state.selectedMessageThread;
 }
 
 function showRecordResult(summary, payload) {
@@ -2603,6 +2736,15 @@ function displayValue(value) {
   return String(value);
 }
 
+function latestMessage(thread) {
+  const messages = thread.messages || [];
+  return messages.length ? messages[messages.length - 1] : {};
+}
+
+function formatMessageBody(value) {
+  return escapeHtml(value || "").replaceAll("\n", "<br>");
+}
+
 function pretty(value) {
   return JSON.stringify(value || {}, null, 2);
 }
@@ -2689,6 +2831,13 @@ document.addEventListener("click", (event) => {
   if (proposalButton) {
     selectProposal(proposalButton.dataset.proposalPath);
     activateView("proposals");
+    return;
+  }
+
+  const messageThreadButton = event.target.closest("[data-message-thread-id]");
+  if (messageThreadButton) {
+    selectMessageThread(messageThreadButton.dataset.messageThreadId);
+    activateView("messages");
     return;
   }
 
@@ -2796,6 +2945,9 @@ bindAsync("publishPrButton", publishPrPreview);
 bindAsync("validatePrButton", validatePr);
 bindAsync("createIssueButton", createIssuePreview);
 bindAsync("updateIssueButton", updateIssuePreview);
+bindAsync("refreshMessagesButton", loadMessages);
+bindAsync("createMessageThreadButton", createMessageThreadPreview);
+bindAsync("sendMessageReplyButton", sendMessageReply);
 
 restoreSession().catch((error) => {
   setStatus(error.message);

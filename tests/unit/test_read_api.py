@@ -43,6 +43,7 @@ class LocalReadAPITests(unittest.TestCase):
         self.assertIn("/crm/summary", response.body["endpoints"])
         self.assertIn("/proposals", response.body["endpoints"])
         self.assertIn("/objects/delete", response.body["endpoints"])
+        self.assertIn("/github/messages", response.body["endpoints"])
 
     def test_skills_endpoint_returns_workspace_crud_descriptors(self) -> None:
         api = LocalReadAPI(repo_root=Path("."), policy_engine=self._policy_engine())
@@ -237,6 +238,9 @@ class LocalReadAPITests(unittest.TestCase):
             denied_preview = api.handle_get(path="/github/previews/prs", query={}, user=user)
             self.assertEqual(denied_preview.status_code, 403)
 
+            denied_messages = api.handle_get(path="/github/messages", query={}, user=user)
+            self.assertEqual(denied_messages.status_code, 403)
+
     def test_proposal_lifecycle_can_be_driven_through_api(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -331,6 +335,60 @@ class LocalReadAPITests(unittest.TestCase):
 
             self.assertEqual(previews.status_code, 200)
             self.assertEqual(len(previews.body["issues"]), 1)
+
+    def test_github_message_thread_create_and_reply(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            api = LocalReadAPI(repo_root=root, policy_engine=self._policy_engine())
+            user = User(id="ssabbani", username="ssabbani", roles=("founder",))
+
+            created = api.handle_post(
+                path="/github/messages",
+                body={
+                    "title": "Launch room",
+                    "body": "Coordinate the launch checklist.",
+                    "participants": ["@sabbanis", "octocat"],
+                    "repo_url": "https://github.com/acme/opra.ai",
+                },
+                user=user,
+            )
+
+            self.assertEqual(created.status_code, 201)
+            thread = created.body["thread"]
+            self.assertEqual(thread["pull_request"]["number"], 1)
+            self.assertEqual(thread["participants"], ["@sabbanis", "octocat"])
+            self.assertEqual(thread["messages"][0]["author"], "ssabbani")
+
+            replied = api.handle_post(
+                path=f"/github/messages/{thread['id']}/comments",
+                body={
+                    "body": "I added the release owner.",
+                    "repo_url": "https://github.com/acme/opra.ai",
+                },
+                user=user,
+            )
+
+            self.assertEqual(replied.status_code, 200)
+            self.assertEqual(len(replied.body["thread"]["messages"]), 2)
+            self.assertEqual(replied.body["thread"]["messages"][1]["body"], "I added the release owner.")
+            self.assertEqual(replied.body["thread"]["messages"][1]["id"], "1")
+
+            second = api.handle_post(
+                path="/github/messages",
+                body={
+                    "title": "Second room",
+                    "body": "Another top-level message.",
+                    "repo_url": "https://github.com/acme/opra.ai",
+                },
+                user=user,
+            )
+
+            self.assertEqual(second.status_code, 201)
+            self.assertEqual(second.body["thread"]["pull_request"]["number"], 2)
+
+            listed = api.handle_get(path="/github/messages", query={}, user=user)
+            self.assertEqual(listed.status_code, 200)
+            self.assertEqual(len(listed.body["threads"]), 2)
 
     def test_delete_object_removes_file_and_records_audit_event(self) -> None:
         with TemporaryDirectory() as temp_dir:

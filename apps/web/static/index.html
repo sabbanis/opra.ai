@@ -30,6 +30,7 @@
       <button type="button" data-view="hr">People</button>
       <button type="button" data-view="records">Workbench</button>
       <button type="button" data-view="proposals">Approvals</button>
+      <button type="button" data-view="messages">Messages</button>
       <button type="button" data-view="github">Publishing</button>
       <button type="button" data-view="audit">Activity</button>
       <button type="button" data-view="users">Users</button>
@@ -560,6 +561,69 @@
               <summary>Request source</summary>
               <pre id="proposalOutput">{}</pre>
             </details>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="messagesView">
+        <section class="messages-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Threads</h2>
+                <p id="messageThreadCount">0 threads</p>
+              </div>
+              <button id="refreshMessagesButton" type="button">Refresh</button>
+            </div>
+            <div class="list" id="messageThreadList"></div>
+          </section>
+
+          <section class="panel message-thread-panel">
+            <div class="panel-heading">
+              <div>
+                <h2 id="selectedMessageTitle">Message Thread</h2>
+                <p id="selectedMessagePath">No thread selected</p>
+              </div>
+            </div>
+            <div class="detail-strip message-facts" id="messageFacts"></div>
+            <div class="message-timeline" id="messageTimeline"></div>
+            <label class="field message-reply-field">
+              <span>Reply</span>
+              <textarea id="messageReplyBody"></textarea>
+            </label>
+            <div class="button-row">
+              <button class="primary" id="sendMessageReplyButton" type="button">Send Reply</button>
+            </div>
+            <details class="source-details">
+              <summary>Thread source</summary>
+              <pre id="messageOutput">{}</pre>
+            </details>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>New Message</h2>
+                <p id="messageCreateSummary">Idle</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field span-2">
+                <span>Title</span>
+                <input id="messageTitle" type="text">
+              </label>
+              <label class="field span-2">
+                <span>Collaborators</span>
+                <input id="messageParticipants" type="text" placeholder="@sabbanis,octocat">
+              </label>
+              <label class="field span-2">
+                <span>Message</span>
+                <textarea id="messageBody"></textarea>
+              </label>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="createMessageThreadButton" type="button">Create Thread</button>
+            </div>
           </section>
         </section>
       </section>

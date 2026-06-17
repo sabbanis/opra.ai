@@ -14,6 +14,7 @@ Current surface:
 - People workspace for jobs, candidates, employees, onboarding, policy acknowledgments, and time off
 - Governed Workbench for create, read, update, delete, validation, policy checks, and approval requests
 - Approval review and commit workflow, publishing drafts, and activity evidence
+- Messages tab for local GitHub pull-request backed conversation previews
 
 Personas:
 

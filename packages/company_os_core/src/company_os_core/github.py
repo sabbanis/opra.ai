@@ -32,6 +32,7 @@ DEFAULT_GITHUB_APPROVAL_OWNERS_PATH = Path(
     "platform/integrations/github/approval_owners.yaml"
 )
 DEFAULT_GITHUB_ISSUE_PREVIEW_DIR = Path("platform/integrations/github/issue_previews")
+DEFAULT_GITHUB_MESSAGE_THREAD_DIR = Path("platform/integrations/github/message_threads")
 DEFAULT_GITHUB_PR_PREVIEW_DIR = Path("platform/integrations/github/pr_previews")
 PROPOSAL_PR_REPORT_MARKER = "<!-- opra-ai-proposal-check -->"
 
@@ -75,6 +76,18 @@ class GitHubIssueResult:
     state: str
     labels: tuple[str, ...] = field(default_factory=tuple)
     assignees: tuple[str, ...] = field(default_factory=tuple)
+    url: str = ""
+
+
+@dataclass(frozen=True)
+class GitHubPullRequestCommentResult:
+    """Result of creating or reading a pull-request conversation comment."""
+
+    id: str
+    body: str
+    author: str = ""
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     url: str = ""
 
 
@@ -240,6 +253,32 @@ class GitHubAdapter:
 
         raise NotImplementedError
 
+    def request_pull_request_reviewers(
+        self,
+        number: int,
+        reviewers: tuple[str, ...],
+    ) -> None:
+        """Request GitHub users or teams as pull-request participants."""
+
+        raise NotImplementedError
+
+    def create_pull_request_comment(
+        self,
+        number: int,
+        body: str,
+    ) -> GitHubPullRequestCommentResult:
+        """Create a timeline comment on a pull request."""
+
+        raise NotImplementedError
+
+    def list_pull_request_comments(
+        self,
+        number: int,
+    ) -> tuple[GitHubPullRequestCommentResult, ...]:
+        """List timeline comments on a pull request."""
+
+        raise NotImplementedError
+
 
 class CommandRunner:
     """Command runner interface for real GitHub CLI integration."""
@@ -291,6 +330,8 @@ class MockGitHubAdapter(GitHubAdapter):
         self.commits: list[GitHubCommitResult] = []
         self.pull_requests: list[GitHubPullRequestResult] = []
         self.issues: dict[int, GitHubIssueResult] = {}
+        self.pull_request_reviewers: dict[int, tuple[str, ...]] = {}
+        self.pull_request_comments: dict[int, list[GitHubPullRequestCommentResult]] = {}
 
     def create_branch(self, branch_name: str, base_branch: str) -> None:
         self.branches.setdefault(branch_name, base_branch)
@@ -392,6 +433,62 @@ class MockGitHubAdapter(GitHubAdapter):
         if issue.number < 1:
             raise GitHubPublishError("issue number must be positive")
         self.issues[issue.number] = issue
+
+    def seed_pull_request(self, pull_request: GitHubPullRequestResult) -> None:
+        """Load a pull request into the mock adapter for local preview updates."""
+
+        if pull_request.number < 1:
+            raise GitHubPublishError("pull request number must be positive")
+        if not any(existing.number == pull_request.number for existing in self.pull_requests):
+            self.pull_requests.append(pull_request)
+            self.pull_requests.sort(key=lambda item: item.number)
+
+    def seed_pull_request_comment(
+        self,
+        number: int,
+        comment: GitHubPullRequestCommentResult,
+    ) -> None:
+        """Load a pull-request comment into the mock adapter for local preview updates."""
+
+        pull_request_number = _positive_issue_number(number)
+        self.pull_request_comments.setdefault(pull_request_number, []).append(comment)
+
+    def request_pull_request_reviewers(
+        self,
+        number: int,
+        reviewers: tuple[str, ...],
+    ) -> None:
+        pull_request_number = _positive_issue_number(number)
+        existing = self.pull_request_reviewers.get(pull_request_number, ())
+        self.pull_request_reviewers[pull_request_number] = _unique_values(
+            existing + _clean_tuple(reviewers)
+        )
+
+    def create_pull_request_comment(
+        self,
+        number: int,
+        body: str,
+    ) -> GitHubPullRequestCommentResult:
+        pull_request_number = _positive_issue_number(number)
+        comments = self.pull_request_comments.setdefault(pull_request_number, [])
+        comment_number = len(comments) + 1
+        result = GitHubPullRequestCommentResult(
+            id=str(comment_number),
+            body=_required_text("body", body),
+            author="",
+            created_at=utc_now(),
+            updated_at=utc_now(),
+            url=f"{self.repo_url}/pull/{pull_request_number}#issuecomment-{comment_number}",
+        )
+        comments.append(result)
+        return result
+
+    def list_pull_request_comments(
+        self,
+        number: int,
+    ) -> tuple[GitHubPullRequestCommentResult, ...]:
+        pull_request_number = _positive_issue_number(number)
+        return tuple(self.pull_request_comments.get(pull_request_number, []))
 
 
 class GitHubCLIAdapter(GitHubAdapter):
@@ -541,6 +638,50 @@ class GitHubCLIAdapter(GitHubAdapter):
         if viewed is None:
             raise GitHubPublishError("GitHub CLI did not return issue details")
         return viewed
+
+    def request_pull_request_reviewers(
+        self,
+        number: int,
+        reviewers: tuple[str, ...],
+    ) -> None:
+        pull_request_number = _positive_issue_number(number)
+        for reviewer in _clean_tuple(reviewers):
+            self._run_gh("pr", "edit", str(pull_request_number), "--add-reviewer", reviewer)
+
+    def create_pull_request_comment(
+        self,
+        number: int,
+        body: str,
+    ) -> GitHubPullRequestCommentResult:
+        pull_request_number = _positive_issue_number(number)
+        cleaned_body = _required_text("body", body)
+        created = self._run_gh(
+            "pr",
+            "comment",
+            str(pull_request_number),
+            "--body",
+            cleaned_body,
+        )
+        url = _last_stdout_line(created)
+        return GitHubPullRequestCommentResult(
+            id=_comment_id_from_url(url),
+            body=cleaned_body,
+            url=url,
+        )
+
+    def list_pull_request_comments(
+        self,
+        number: int,
+    ) -> tuple[GitHubPullRequestCommentResult, ...]:
+        pull_request_number = _positive_issue_number(number)
+        result = self._run_gh(
+            "pr",
+            "view",
+            str(pull_request_number),
+            "--json",
+            "comments",
+        )
+        return _pull_request_comments_from_json(result.stdout)
 
     def _view_pull_request(self, pr_ref: str, check: bool) -> Optional[GitHubPullRequestResult]:
         result = self._run_gh(
@@ -1194,6 +1335,36 @@ def _issue_from_json(document: str) -> GitHubIssueResult:
     return _issue_from_mapping(data)
 
 
+def _pull_request_comments_from_json(document: str) -> tuple[GitHubPullRequestCommentResult, ...]:
+    try:
+        data = json.loads(document)
+    except json.JSONDecodeError as exc:
+        raise GitHubPublishError("GitHub CLI returned invalid pull request comments JSON") from exc
+
+    comments = data.get("comments", data)
+    if comments is None or comments == {}:
+        return ()
+    if not isinstance(comments, list):
+        raise GitHubPublishError("GitHub pull request comments payload must be a list")
+
+    parsed = []
+    for item in comments:
+        if not isinstance(item, Mapping):
+            raise GitHubPublishError("GitHub pull request comment entry must be an object")
+        url = str(item.get("url", ""))
+        parsed.append(
+            GitHubPullRequestCommentResult(
+                id=str(item.get("id", "")) or _comment_id_from_url(url),
+                body=str(item.get("body", "")),
+                author=_comment_author(item),
+                created_at=_optional_timestamp(item.get("createdAt", item.get("created_at"))),
+                updated_at=_optional_timestamp(item.get("updatedAt", item.get("updated_at"))),
+                url=url,
+            )
+        )
+    return tuple(parsed)
+
+
 def issue_from_data(data: Any) -> GitHubIssueResult:
     """Parse a serialized GitHub issue result."""
 
@@ -1217,6 +1388,18 @@ def _issue_from_mapping(data: Mapping[str, Any]) -> GitHubIssueResult:
 def _last_stdout_line(result: CommandResult) -> str:
     lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
     return lines[-1] if lines else ""
+
+
+def _comment_id_from_url(url: str) -> str:
+    match = re.search(r"(?:issuecomment-|discussion_r)([A-Za-z0-9_-]+)", url)
+    return match.group(1) if match else ""
+
+
+def _comment_author(item: Mapping[str, Any]) -> str:
+    author = item.get("author", item.get("user", {}))
+    if isinstance(author, Mapping):
+        return str(author.get("login", ""))
+    return str(author or "")
 
 
 def _command_error(result: CommandResult) -> str:
